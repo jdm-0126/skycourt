@@ -89,7 +89,7 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
     - Render recent activity feed and calendar view of bookings
     - _Requirements: 10.1, 10.2, 10.3_
 
-  - [ ] 10.6 Write property test for admin dashboard stats accuracy
+  - [x] 10.6 Write property test for admin dashboard stats accuracy
     - **Property 16: Admin Dashboard Stats Match Database State**
     - **Validates: Requirements 10.1**
 
