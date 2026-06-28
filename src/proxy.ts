@@ -34,7 +34,7 @@ function getProtectedRoute(
 // Middleware
 // ---------------------------------------------------------------------------
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Guard: if env vars are missing (e.g. during build-time static analysis)

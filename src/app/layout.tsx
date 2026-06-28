@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
 import ThemeRegistry from "@/components/ui/ThemeRegistry";
 import "./globals.css";
 
@@ -16,15 +17,31 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+async function getThemeMode(): Promise<"light" | "dark"> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "theme_mode")
+      .maybeSingle<{ value: string }>();
+    return data?.value === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const initialMode = await getThemeMode();
+
   return (
     <html lang="en">
       <body>
-        <ThemeRegistry>{children}</ThemeRegistry>
+        <ThemeRegistry initialMode={initialMode}>{children}</ThemeRegistry>
       </body>
     </html>
   );

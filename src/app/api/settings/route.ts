@@ -116,9 +116,6 @@ function rowsToPayload(rows: SystemSettingRow[]): SettingsPayload {
  * Requirements: 22.1
  */
 export async function GET(_request: NextRequest): Promise<NextResponse> {
-  // -------------------------------------------------------------------------
-  // 1. Auth + authorisation
-  // -------------------------------------------------------------------------
   const auth = await authoriseSuperAdmin();
   if (auth.error) return auth.error;
 

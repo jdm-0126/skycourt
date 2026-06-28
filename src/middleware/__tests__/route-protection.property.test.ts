@@ -137,7 +137,7 @@ vi.mock("@supabase/ssr", () => {
 // ---------------------------------------------------------------------------
 // Import the module under test and the exposed mock handles AFTER vi.mock.
 // ---------------------------------------------------------------------------
-import { middleware } from "../../middleware";
+import { proxy } from "../../proxy";
 import * as supabaseSsrMock from "@supabase/ssr";
 
 // Access the exposed mock handles
@@ -233,7 +233,7 @@ describe("Property 8: Unauthenticated users are redirected from protected routes
     await fc.assert(
       fc.asyncProperty(protectedPaths, async (pathname) => {
         const request = makeRequest(pathname);
-        const response = await middleware(request);
+        const response = await proxy(request);
 
         // Must be a redirect (3xx)
         expect(response.status).toBeGreaterThanOrEqual(300);
@@ -260,7 +260,7 @@ describe("Property 8: Unauthenticated users are redirected from protected routes
     await fc.assert(
       fc.asyncProperty(protectedPaths, async (pathname) => {
         const request = makeRequest(pathname);
-        const response = await middleware(request);
+        const response = await proxy(request);
 
         const location = getLocation(response);
         expect(location).not.toBeUndefined();
@@ -296,7 +296,7 @@ describe("Property 9a: Member role is forbidden from admin/superadmin routes", (
     await fc.assert(
       fc.asyncProperty(adminOrSuperAdminPaths, async (pathname) => {
         const request = makeRequest(pathname);
-        const response = await middleware(request);
+        const response = await proxy(request);
 
         // Must be a redirect
         expect(response.status).toBeGreaterThanOrEqual(300);
@@ -329,7 +329,7 @@ describe("Property 9b: Admin role is forbidden from superadmin-only routes", () 
     await fc.assert(
       fc.asyncProperty(superAdminOnlyPaths, async (pathname) => {
         const request = makeRequest(pathname);
-        const response = await middleware(request);
+        const response = await proxy(request);
 
         // Must be a redirect
         expect(response.status).toBeGreaterThanOrEqual(300);
@@ -362,7 +362,7 @@ describe("Property 9c: Member role can access member routes (no redirect)", () =
     await fc.assert(
       fc.asyncProperty(memberPaths, async (pathname) => {
         const request = makeRequest(pathname);
-        const response = await middleware(request);
+        const response = await proxy(request);
 
         const location = getLocation(response);
         const isBlockingRedirect =
@@ -390,7 +390,7 @@ describe("Elevated roles can access member routes", () => {
     await fc.assert(
       fc.asyncProperty(memberPaths, async (pathname) => {
         const request = makeRequest(pathname);
-        const response = await middleware(request);
+        const response = await proxy(request);
 
         const location = getLocation(response);
         const isBlockingRedirect =
@@ -413,7 +413,7 @@ describe("Elevated roles can access member routes", () => {
     await fc.assert(
       fc.asyncProperty(allProtectedPaths, async (pathname) => {
         const request = makeRequest(pathname);
-        const response = await middleware(request);
+        const response = await proxy(request);
 
         const location = getLocation(response);
         const isBlockingRedirect =

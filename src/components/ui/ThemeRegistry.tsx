@@ -1,36 +1,33 @@
 "use client";
 
 /**
- * ThemeRegistry — wires the Material UI green theme into the React tree.
+ * ThemeRegistry — wires the Material UI theme into the React tree.
  *
- * Must be a Client Component because MUI's emotion-based styling requires
- * access to the browser's style injection APIs. Wrap the root layout with
- * this component to apply the Sky Court theme to every page.
- *
- * The `useServerInsertedHTML` hook flushes emotion styles on the server so
- * there is no flash of unstyled content on first load with Next.js App Router.
+ * Supports light/dark mode driven by:
+ *   1. The `data-color-scheme` attribute on <html> (set server-side or by JS)
+ *   2. A `themeMode` prop passed from a server component reading system_settings
+ *   3. Client-side override stored in localStorage key `sky-court-theme`
  */
 
 import * as React from "react";
 import { useServerInsertedHTML } from "next/navigation";
-import { ThemeProvider } from "@mui/material/styles";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
-import theme from "./theme";
+import baseTheme from "./theme";
 
-// Create the emotion cache once, outside the component.
-// The `prepend: true` option ensures MUI styles are injected before any
-// other styles so they can be overridden without specificity fights.
 function createEmotionCache() {
   return createCache({ key: "mui-style", prepend: true });
 }
 
 interface ThemeRegistryProps {
   children: React.ReactNode;
+  /** Initial theme mode from system_settings (server-rendered). */
+  initialMode?: "light" | "dark";
 }
 
-export default function ThemeRegistry({ children }: ThemeRegistryProps) {
+export default function ThemeRegistry({ children, initialMode = "light" }: ThemeRegistryProps) {
   const [{ cache, flush }] = React.useState(() => {
     const cache = createEmotionCache();
     cache.compat = true;
@@ -52,6 +49,48 @@ export default function ThemeRegistry({ children }: ThemeRegistryProps) {
     return { cache, flush };
   });
 
+  // Resolve active mode: localStorage override > server setting
+  const [mode, setMode] = React.useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("sky-court-theme") as "light" | "dark" | null;
+      if (stored === "light" || stored === "dark") return stored;
+    }
+    return initialMode;
+  });
+
+  // Expose a setter on the window so AdminSettingsClient can toggle without
+  // a full page reload. Also update localStorage and dispatch a custom event.
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const newMode = (e as CustomEvent<"light" | "dark">).detail;
+      setMode(newMode);
+      localStorage.setItem("sky-court-theme", newMode);
+    };
+    window.addEventListener("sky-court-theme-change", handler);
+    return () => window.removeEventListener("sky-court-theme-change", handler);
+  }, []);
+
+  const activeTheme = React.useMemo(
+    () =>
+      createTheme({
+        ...baseTheme,
+        palette: {
+          ...baseTheme.palette,
+          mode,
+          ...(mode === "dark"
+            ? {
+                background: { default: "#121212", paper: "#1e1e1e" },
+                text: { primary: "#e8e8e8", secondary: "#aaaaaa" },
+              }
+            : {
+                background: { default: "#f9fafb", paper: "#ffffff" },
+                text: { primary: "#1a1a1a", secondary: "#4a4a4a" },
+              }),
+        },
+      }),
+    [mode]
+  );
+
   useServerInsertedHTML(() => {
     const names = flush();
     if (names.length === 0) return null;
@@ -71,8 +110,7 @@ export default function ThemeRegistry({ children }: ThemeRegistryProps) {
 
   return (
     <CacheProvider value={cache}>
-      <ThemeProvider theme={theme}>
-        {/* CssBaseline resets browser defaults and applies MUI background colour */}
+      <ThemeProvider theme={activeTheme}>
         <CssBaseline />
         {children}
       </ThemeProvider>

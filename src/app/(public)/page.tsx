@@ -14,6 +14,10 @@ import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 
 import { createClient } from "@/lib/supabase/server";
 import CtaButton from "@/components/home/CtaButton";
+import {
+  DEFAULT_HOMEPAGE_ORDER,
+  type HomepageSection,
+} from "@/lib/validation/settings";
 
 // ---------------------------------------------------------------------------
 // Metadata
@@ -152,6 +156,27 @@ async function fetchGalleryPreview(): Promise<GalleryImage[]> {
   }
 }
 
+async function fetchHomepageOrder(): Promise<HomepageSection[]> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "homepage_order")
+      .maybeSingle<{ value: string }>();
+
+    if (data?.value) {
+      const parsed = JSON.parse(data.value) as unknown;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed as HomepageSection[];
+      }
+    }
+    return DEFAULT_HOMEPAGE_ORDER;
+  } catch {
+    return DEFAULT_HOMEPAGE_ORDER;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Home Page — Server Component
 // ---------------------------------------------------------------------------
@@ -169,21 +194,167 @@ async function fetchGalleryPreview(): Promise<GalleryImage[]> {
  */
 export default async function HomePage() {
   // Fetch all sections in parallel — Req 1.9
-  const [hero, about, ratesContent, faqContent, galleryImages] = await Promise.all([
+  const [hero, about, ratesContent, faqContent, galleryImages, homepageOrder] = await Promise.all([
     fetchSection<HeroContent>("hero", DEFAULT_HERO),
     fetchSection<AboutContent>("about", DEFAULT_ABOUT),
     fetchSection<{ items: RateItem[] }>("rates", { items: DEFAULT_RATES }),
     fetchSection<FaqContent>("faq", { items: DEFAULT_FAQ }),
     fetchGalleryPreview(),
+    fetchHomepageOrder(),
   ]);
 
   const rates: RateItem[] = ratesContent?.items?.length ? ratesContent.items : DEFAULT_RATES;
   const faqItems: FaqItem[] = faqContent?.items?.length ? faqContent.items : DEFAULT_FAQ;
 
+  // ---------------------------------------------------------------------------
+  // Section renderers — called in the order defined by homepageOrder
+  // ---------------------------------------------------------------------------
+
+  function renderAbout() {
+    if (about.visible === false) return null;
+    return (
+      <Box
+        key="about"
+        component="section"
+        aria-label="About Sky Court"
+        sx={{ bgcolor: "background.paper", py: { xs: 8, md: 10 } }}
+      >
+        <Container maxWidth="md">
+          <Typography variant="overline" component="p" sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}>
+            {about.promo ? "Promotions" : "Who We Are"}
+          </Typography>
+          <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 3 }}>
+            {about.promo ? "Special Offer" : "About Sky Court"}
+          </Typography>
+          <Divider sx={{ width: 60, borderWidth: 3, borderColor: "primary.main", mb: 4 }} />
+          <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.85, fontSize: "1.1rem" }}>
+            {about.promo || about.text}
+          </Typography>
+        </Container>
+      </Box>
+    );
+  }
+
+  function renderRates() {
+    return (
+      <Box
+        key="rates"
+        component="section"
+        aria-label="Court rates"
+        sx={{ bgcolor: "background.default", py: { xs: 8, md: 10 } }}
+      >
+        <Container maxWidth="md">
+          <Typography variant="overline" component="p" sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}>Pricing</Typography>
+          <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>Court Rates</Typography>
+          <Divider sx={{ width: 60, borderWidth: 3, borderColor: "primary.main", mb: 5 }} />
+          <Grid container spacing={3}>
+            {rates.map((rate, idx) => (
+              <Grid key={idx} size={{ xs: 12, sm: 6 }}>
+                <Paper elevation={0} sx={{ p: 3, border: "1px solid", borderColor: "divider", borderRadius: 3, height: "100%", display: "flex", flexDirection: "column", gap: 1, transition: "box-shadow 0.2s", "&:hover": { boxShadow: 4 } }}>
+                  <Typography variant="subtitle1" fontWeight={600} color="text.primary">{rate.label}</Typography>
+                  <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ lineHeight: 1 }}>{rate.price}</Typography>
+                  {rate.note && <Typography variant="body2" color="text.secondary">{rate.note}</Typography>}
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+    );
+  }
+
+  function renderGallery() {
+    if (galleryImages.length === 0) return null;
+    return (
+      <Box
+        key="gallery"
+        component="section"
+        aria-label="Gallery preview"
+        sx={{ bgcolor: "background.paper", py: { xs: 8, md: 10 } }}
+      >
+        <Container maxWidth="lg">
+          <Typography variant="overline" component="p" sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}>Gallery</Typography>
+          <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>The Courts</Typography>
+          <Divider sx={{ width: 60, borderWidth: 3, borderColor: "primary.main", mb: 5 }} />
+          <Grid container spacing={2}>
+            {galleryImages.map((img) => (
+              <Grid key={img.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card elevation={0} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, overflow: "hidden", transition: "transform 0.2s, box-shadow 0.2s", "&:hover": { transform: "scale(1.02)", boxShadow: 4 } }}>
+                  <CardMedia component="img" height="220" image={img.public_url} alt="Sky Court pickleball court" sx={{ objectFit: "cover" }} />
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+    );
+  }
+
+  function renderAmenities() {
+    return (
+      <Box
+        key="amenities"
+        component="section"
+        aria-label="Amenities"
+        sx={{ bgcolor: "primary.dark", color: "#fff", py: { xs: 8, md: 10 } }}
+      >
+        <Container maxWidth="md">
+          <Typography variant="overline" component="p" sx={{ color: "rgba(255,255,255,0.7)", fontWeight: 700, letterSpacing: 2, mb: 1 }}>Facilities</Typography>
+          <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>Our Amenities</Typography>
+          <Divider sx={{ width: 60, borderWidth: 3, borderColor: "rgba(255,255,255,0.5)", mb: 5 }} />
+          <Grid container spacing={2}>
+            {DEFAULT_AMENITIES.map((amenity, idx) => (
+              <Grid key={idx} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <CheckCircleOutlineIcon sx={{ color: "rgba(255,255,255,0.85)", flexShrink: 0 }} aria-hidden="true" />
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>{amenity}</Typography>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+    );
+  }
+
+  function renderFaq() {
+    if (faqItems.length === 0) return null;
+    return (
+      <Box
+        key="faq"
+        component="section"
+        aria-label="Frequently asked questions"
+        sx={{ bgcolor: "background.default", py: { xs: 8, md: 10 } }}
+      >
+        <Container maxWidth="md">
+          <Typography variant="overline" component="p" sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}>FAQ</Typography>
+          <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>Common Questions</Typography>
+          <Divider sx={{ width: 60, borderWidth: 3, borderColor: "primary.main", mb: 5 }} />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {faqItems.map((item, idx) => (
+              <Paper key={idx} elevation={0} sx={{ p: 3, border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>{item.question}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>{item.answer}</Typography>
+              </Paper>
+            ))}
+          </Box>
+        </Container>
+      </Box>
+    );
+  }
+
+  const sectionRenderers: Record<HomepageSection, () => React.ReactNode> = {
+    about: renderAbout,
+    rates: renderRates,
+    gallery: renderGallery,
+    amenities: renderAmenities,
+    faq: renderFaq,
+  };
+
   return (
     <Box component="main">
       {/* ===================================================================
-          1. Hero Banner — Req 1.1, 1.7, 1.8
+          Hero Banner — always first, Req 1.1, 1.7, 1.8
       ==================================================================== */}
       <Box
         component="section"
@@ -198,348 +369,49 @@ export default async function HomePage() {
           background: "linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #43a047 100%)",
           color: "#fff",
           px: 2,
-          // Extra top padding to push content below the fixed transparent navbar
           pt: { xs: 16, md: 20 },
           pb: { xs: 8, md: 12 },
           overflow: "hidden",
-          // Pull section up to sit directly behind the transparent navbar
           mt: "-64px",
         }}
       >
-        {/* Decorative background icon */}
-        <Box
-          aria-hidden="true"
-          sx={{
-            position: "absolute",
-            right: { xs: -60, md: -30 },
-            top: { xs: -40, md: -20 },
-            opacity: 0.07,
-          }}
-        >
+        <Box aria-hidden="true" sx={{ position: "absolute", right: { xs: -60, md: -30 }, top: { xs: -40, md: -20 }, opacity: 0.07 }}>
           <SportsTennisIcon sx={{ fontSize: { xs: 280, md: 420 } }} />
         </Box>
-
         <Container maxWidth="md" sx={{ position: "relative", zIndex: 1 }}>
-          {/* Headline — Req 1.1 */}
-          <Typography
-            variant="h2"
-            component="h1"
-            sx={{
-              fontWeight: 800,
-              lineHeight: 1.1,
-              mb: 2,
-              fontSize: { xs: "2.2rem", sm: "3rem", md: "3.8rem" },
-              textShadow: "0 2px 8px rgba(0,0,0,0.2)",
-            }}
-          >
+          <Typography variant="h2" component="h1" sx={{ fontWeight: 800, lineHeight: 1.1, mb: 2, fontSize: { xs: "2.2rem", sm: "3rem", md: "3.8rem" }, textShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
             {hero.headline}
           </Typography>
-
-          {/* Subheading — Req 1.1 */}
-          <Typography
-            variant="h6"
-            component="p"
-            sx={{
-              fontWeight: 400,
-              maxWidth: 680,
-              mx: "auto",
-              lineHeight: 1.6,
-              opacity: 0.92,
-              fontSize: { xs: "1rem", md: "1.2rem" },
-            }}
-          >
+          <Typography variant="h6" component="p" sx={{ fontWeight: 400, maxWidth: 680, mx: "auto", lineHeight: 1.6, opacity: 0.92, fontSize: { xs: "1rem", md: "1.2rem" } }}>
             {hero.subheading}
           </Typography>
-
-          {/* CTA Button with Error Boundary — Req 1.7, 1.8 */}
           <CtaButton label={hero.cta_text || DEFAULT_HERO.cta_text} />
         </Container>
       </Box>
 
       {/* ===================================================================
-          2. About / Promo Section — Req 1.2
-          Visibility and promo text are controlled via Admin > Website Content.
-          When visible=false the section is hidden entirely.
-          When promo text is set it replaces the about text.
+          Ordered sections — rendered in the admin-configured order
       ==================================================================== */}
-      {(about.visible !== false) && (
-        <Box
-          component="section"
-          aria-label="About Sky Court"
-          sx={{ bgcolor: "background.paper", py: { xs: 8, md: 10 } }}
-        >
-          <Container maxWidth="md">
-            <Typography
-              variant="overline"
-              component="p"
-              sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}
-            >
-              {about.promo ? "Promotions" : "Who We Are"}
-            </Typography>
-            <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 3 }}>
-              {about.promo ? "Special Offer" : "About Sky Court"}
-            </Typography>
-            <Divider
-              sx={{
-                width: 60,
-                borderWidth: 3,
-                borderColor: "primary.main",
-                mb: 4,
-              }}
-            />
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ lineHeight: 1.85, fontSize: "1.1rem" }}
-            >
-              {about.promo || about.text}
-            </Typography>
-          </Container>
-        </Box>
-      )}
+      {homepageOrder.map((sectionKey) => {
+        const renderer = sectionRenderers[sectionKey];
+        return renderer ? renderer() : null;
+      })}
 
       {/* ===================================================================
-          3. Court Rates — Req 1.3
-      ==================================================================== */}
-      <Box
-        component="section"
-        aria-label="Court rates"
-        sx={{ bgcolor: "background.default", py: { xs: 8, md: 10 } }}
-      >
-        <Container maxWidth="md">
-          <Typography
-            variant="overline"
-            component="p"
-            sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}
-          >
-            Pricing
-          </Typography>
-          <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
-            Court Rates
-          </Typography>
-          <Divider sx={{ width: 60, borderWidth: 3, borderColor: "primary.main", mb: 5 }} />
-
-          <Grid container spacing={3}>
-            {rates.map((rate, idx) => (
-              <Grid
-                key={idx}
-                size={{ xs: 12, sm: 6 }}
-              >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 3,
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 3,
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 1,
-                    transition: "box-shadow 0.2s",
-                    "&:hover": { boxShadow: 4 },
-                  }}
-                >
-                  <Typography variant="subtitle1" fontWeight={600} color="text.primary">
-                    {rate.label}
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    fontWeight={800}
-                    color="primary.main"
-                    sx={{ lineHeight: 1 }}
-                  >
-                    {rate.price}
-                  </Typography>
-                  {rate.note && (
-                    <Typography variant="body2" color="text.secondary">
-                      {rate.note}
-                    </Typography>
-                  )}
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* ===================================================================
-          4. Amenities Section — Req 1.4
-      ==================================================================== */}
-      <Box
-        component="section"
-        aria-label="Amenities"
-        sx={{
-          bgcolor: "primary.dark",
-          color: "#fff",
-          py: { xs: 8, md: 10 },
-        }}
-      >
-        <Container maxWidth="md">
-          <Typography
-            variant="overline"
-            component="p"
-            sx={{ color: "rgba(255,255,255,0.7)", fontWeight: 700, letterSpacing: 2, mb: 1 }}
-          >
-            Facilities
-          </Typography>
-          <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
-            Our Amenities
-          </Typography>
-          <Divider sx={{ width: 60, borderWidth: 3, borderColor: "rgba(255,255,255,0.5)", mb: 5 }} />
-
-          <Grid container spacing={2}>
-            {DEFAULT_AMENITIES.map((amenity, idx) => (
-              <Grid
-                key={idx}
-                size={{ xs: 12, sm: 6, md: 4 }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <CheckCircleOutlineIcon
-                    sx={{ color: "rgba(255,255,255,0.85)", flexShrink: 0 }}
-                    aria-hidden="true"
-                  />
-                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    {amenity}
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* ===================================================================
-          5. Gallery Preview — Req 1.5
-      ==================================================================== */}
-      {galleryImages.length > 0 && (
-        <Box
-          component="section"
-          aria-label="Gallery preview"
-          sx={{ bgcolor: "background.paper", py: { xs: 8, md: 10 } }}
-        >
-          <Container maxWidth="lg">
-            <Typography
-              variant="overline"
-              component="p"
-              sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}
-            >
-              Gallery
-            </Typography>
-            <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
-              The Courts
-            </Typography>
-            <Divider sx={{ width: 60, borderWidth: 3, borderColor: "primary.main", mb: 5 }} />
-
-            <Grid container spacing={2}>
-              {galleryImages.map((img) => (
-                <Grid
-                  key={img.id}
-                  size={{ xs: 12, sm: 6, md: 4 }}
-                >
-                  <Card
-                    elevation={0}
-                    sx={{
-                      border: "1px solid",
-                      borderColor: "divider",
-                      borderRadius: 2,
-                      overflow: "hidden",
-                      transition: "transform 0.2s, box-shadow 0.2s",
-                      "&:hover": { transform: "scale(1.02)", boxShadow: 4 },
-                    }}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="220"
-                      image={img.public_url}
-                      alt="Sky Court pickleball court"
-                      sx={{ objectFit: "cover" }}
-                    />
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Container>
-        </Box>
-      )}
-
-      {/* ===================================================================
-          6. FAQ Section — Req 1.9 (content sourced from website_content)
-      ==================================================================== */}
-      {faqItems.length > 0 && (
-        <Box
-          component="section"
-          aria-label="Frequently asked questions"
-          sx={{ bgcolor: "background.default", py: { xs: 8, md: 10 } }}
-        >
-          <Container maxWidth="md">
-            <Typography
-              variant="overline"
-              component="p"
-              sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}
-            >
-              FAQ
-            </Typography>
-            <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
-              Common Questions
-            </Typography>
-            <Divider sx={{ width: 60, borderWidth: 3, borderColor: "primary.main", mb: 5 }} />
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {faqItems.map((item, idx) => (
-                <Paper
-                  key={idx}
-                  elevation={0}
-                  sx={{
-                    p: 3,
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 3,
-                  }}
-                >
-                  <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
-                    {item.question}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                    {item.answer}
-                  </Typography>
-                </Paper>
-              ))}
-            </Box>
-          </Container>
-        </Box>
-      )}
-
-      {/* ===================================================================
-          7. Bottom CTA Section — Req 1.6, 1.7, 1.8
+          Bottom CTA — always last, Req 1.6, 1.7, 1.8
       ==================================================================== */}
       <Box
         component="section"
         aria-label="Call to action"
-        sx={{
-          background: "linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%)",
-          color: "#fff",
-          py: { xs: 8, md: 12 },
-          textAlign: "center",
-          px: 2,
-        }}
+        sx={{ background: "linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%)", color: "#fff", py: { xs: 8, md: 12 }, textAlign: "center", px: 2 }}
       >
         <Container maxWidth="sm">
-          <Typography
-            variant="h3"
-            component="h2"
-            sx={{ fontWeight: 800, mb: 2, fontSize: { xs: "2rem", md: "2.8rem" } }}
-          >
+          <Typography variant="h3" component="h2" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: "2rem", md: "2.8rem" } }}>
             Ready to Play?
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{ opacity: 0.88, mb: 4, fontSize: "1.1rem", lineHeight: 1.7 }}
-          >
+          <Typography variant="body1" sx={{ opacity: 0.88, mb: 4, fontSize: "1.1rem", lineHeight: 1.7 }}>
             Create a free account and reserve your court in minutes. See you on the court!
           </Typography>
-
-          {/* CTA with Error Boundary — Req 1.7, 1.8 */}
           <CtaButton label="Get Started — It's Free" />
         </Container>
       </Box>

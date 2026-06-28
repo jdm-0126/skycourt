@@ -110,14 +110,28 @@ async function fetchSection<T>(section: string, fallback: T): Promise<T> {
 // ---------------------------------------------------------------------------
 
 export default async function LocateUsPage() {
-  // Fetch contact and hours sections in parallel — Req 2.4
-  const [contact, hours] = await Promise.all([
+  // Fetch contact, hours, and map_url from system_settings in parallel
+  const [contact, hours, mapSetting] = await Promise.all([
     fetchSection<ContactContent>("contact", {}),
     fetchSection<HoursContent>("hours", DEFAULT_HOURS),
+    (async () => {
+      try {
+        const supabase = await createClient();
+        const { data } = await supabase
+          .from("system_settings")
+          .select("value")
+          .eq("key", "map_url")
+          .maybeSingle<{ value: string }>();
+        return data?.value ?? null;
+      } catch {
+        return null;
+      }
+    })(),
   ]);
 
   const address = contact.address ?? DEFAULT_ADDRESS;
-  const mapUrl = contact.map_url ?? DEFAULT_MAP_URL;
+  // Prefer system_settings map_url, fall back to contact section, then default
+  const mapUrl = mapSetting || contact.map_url || DEFAULT_MAP_URL;
 
   // Merge fetched hours with defaults so any missing day still shows a value
   const resolvedHours: HoursContent = { ...DEFAULT_HOURS, ...hours };
