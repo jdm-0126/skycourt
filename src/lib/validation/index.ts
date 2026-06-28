@@ -21,3 +21,6 @@ export type { ContentInput } from "./content";
 
 export { adminCreateSchema } from "./admin-create";
 export type { AdminCreateInput } from "./admin-create";
+
+export { settingsSchema } from "./settings";
+export type { SettingsInput } from "./settings";

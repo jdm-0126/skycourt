@@ -27,10 +27,12 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Snackbar from "@mui/material/Snackbar";
 import Stack from "@mui/material/Stack";
+import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -38,6 +40,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,6 +67,8 @@ interface HeroContent {
 
 interface AboutContent {
   text: string;
+  visible?: boolean;
+  promo?: string;
 }
 
 interface ContactContent {
@@ -120,7 +125,7 @@ function defaultContent(section: ContentSection): SectionContent {
     case "hero":
       return { headline: "", subheading: "", cta_text: "" };
     case "about":
-      return { text: "" };
+      return { text: "", visible: true, promo: "" };
     case "contact":
       return { phone: "", email: "", facebook_url: "" };
     case "hours": {
@@ -198,16 +203,83 @@ function HeroEditor({ data, onChange }: FormProps<HeroContent>) {
 }
 
 function AboutEditor({ data, onChange }: FormProps<AboutContent>) {
+  const isVisible = data.visible !== false;
   return (
-    <TextField
-      label="About Text"
-      fullWidth
-      multiline
-      rows={6}
-      value={data.text}
-      onChange={(e) => onChange({ text: e.target.value })}
-      inputProps={{ "aria-label": "About section text" }}
-    />
+    <Stack spacing={2}>
+      {/* Visibility toggle */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          p: 1.5,
+          border: "1px solid",
+          borderColor: isVisible ? "success.light" : "warning.light",
+          borderRadius: 2,
+          bgcolor: isVisible ? "success.50" : "warning.50",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {isVisible ? (
+            <VisibilityIcon fontSize="small" color="success" />
+          ) : (
+            <VisibilityOffIcon fontSize="small" color="warning" />
+          )}
+          <Box>
+            <Typography variant="body2" fontWeight={600}>
+              About Section Visibility
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {isVisible
+                ? "Section is visible on the public home page"
+                : "Section is hidden — promo or nothing is shown instead"}
+            </Typography>
+          </Box>
+        </Box>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={isVisible}
+              onChange={(e) => onChange({ ...data, visible: e.target.checked })}
+              color="success"
+              inputProps={{ "aria-label": "Toggle about section visibility" }}
+            />
+          }
+          label={isVisible ? "Visible" : "Hidden"}
+          labelPlacement="start"
+          sx={{ m: 0 }}
+        />
+      </Box>
+
+      {/* About text */}
+      <TextField
+        label="About Text"
+        fullWidth
+        multiline
+        rows={5}
+        value={data.text}
+        onChange={(e) => onChange({ ...data, text: e.target.value })}
+        disabled={!isVisible && !data.promo}
+        inputProps={{ "aria-label": "About section text" }}
+        helperText="Shown when no Promo text is set and the section is visible."
+      />
+
+      {/* Promo override */}
+      <TextField
+        label="Promo / Special Offer Text (optional)"
+        fullWidth
+        multiline
+        rows={3}
+        value={data.promo ?? ""}
+        onChange={(e) => onChange({ ...data, promo: e.target.value })}
+        inputProps={{ "aria-label": "Promo text override" }}
+        helperText={
+          data.promo
+            ? "✓ Promo text is set — this will replace the About text on the home page."
+            : "Leave blank to show the About text. Fill in to replace About with a promotion."
+        }
+      />
+    </Stack>
   );
 }
 
@@ -485,6 +557,24 @@ function ContentPreview({ section, content }: PreviewProps) {
 
         {section === "about" && (() => {
           const c = content as AboutContent;
+          if (c.visible === false) {
+            return (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <VisibilityOffIcon fontSize="small" color="disabled" />
+                <Typography variant="body2" color="text.disabled" fontStyle="italic">
+                  Section is hidden on the public site.
+                </Typography>
+              </Box>
+            );
+          }
+          if (c.promo) {
+            return (
+              <Stack spacing={0.5}>
+                <Typography variant="overline" color="primary" fontWeight={700}>Special Offer</Typography>
+                <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>{c.promo}</Typography>
+              </Stack>
+            );
+          }
           return (
             <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
               {c.text || <em style={{ color: "#bbb" }}>About text…</em>}

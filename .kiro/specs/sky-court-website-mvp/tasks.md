@@ -303,7 +303,7 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
 
 
 
-- [ ] 14. Super admin panel
+- [x] 14. Super admin panel
   - [x] 14.1 Implement admin account management API routes
     - `POST /api/users/admin`: create admin account (name, email, password); assign `role = 'admin'`; write audit log; require `super_admin`
     - `PATCH /api/users/:id/admin-status`: deactivate/reactivate admin; on deactivate terminate all active sessions via Supabase Admin SDK; require `super_admin`
@@ -342,24 +342,24 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
     - **Property 34: Audit Log Filter Returns Correct Entries**
     - **Validates: Requirements 20.1, 20.3**
 
-  - [ ] 14.9 Implement database backup API routes and page
+  - [x] 14.9 Implement database backup API routes and page
     - `POST /api/backup`: trigger Supabase export; create `backup_history` record with `status = 'in_progress'`; write audit log; require `super_admin`
     - `GET /api/backup`: return backup history list; require `super_admin`
     - Atomically update `status` and `completed_at` on completion; set `status = 'failed'` with error message on failure
     - Page (`src/app/(admin)/superadmin/backup/page.tsx`): trigger button, status display, backup history list
     - _Requirements: 21.1, 21.2, 21.3, 21.4_
 
-  - [ ] 14.10 Write property test for backup completion atomicity
+  - [x] 14.10 Write property test for backup completion atomicity
     - **Property 35: Backup Completion Is Atomic**
     - **Validates: Requirements 21.3**
 
-  - [ ] 14.11 Implement system settings API routes and page
+  - [x] 14.11 Implement system settings API routes and page
     - `GET /api/settings`: return all settings; require `super_admin`
     - `PATCH /api/settings`: update settings (site name, contact email, maintenance_mode); require `super_admin`
     - Page (`src/app/(admin)/superadmin/website-settings/page.tsx`): form for site name, contact email, maintenance mode toggle
     - _Requirements: 22.1, 22.2, 22.3_
 
-  - [ ] 14.12 Write property test for maintenance mode controls public access
+  - [x] 14.12 Write property test for maintenance mode controls public access
     - **Property 36: Maintenance Mode Controls Public Access**
     - **Validates: Requirements 22.2, 22.3**
 
@@ -393,20 +393,20 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
     - `src/app/(member)/bookings/[id]/page.tsx`: booking detail / success page
     - _Requirements: 7.1, 7.6_
 
-- [-] 16. Gallery API routes
-  - [-] 16.1 Implement gallery API routes
+- [x] 16. Gallery API routes
+  - [x] 16.1 Implement gallery API routes
     - `GET /api/gallery`: return images ordered by `display_order ASC`; public access
     - `POST /api/gallery`: upload file to Supabase Storage; insert `gallery_images` record; require `admin+`; return `400` with `FILE_TOO_LARGE` or `UNSUPPORTED_TYPE` code on failure
     - `DELETE /api/gallery/:id`: remove from Supabase Storage and delete DB record; require `admin+`
     - `PATCH /api/gallery/order`: rewrite all `display_order` values in a single transaction; require `admin+`
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
 
-  - [ ] 16.2 Write property tests for gallery management
+  - [x] 16.2 Write property tests for gallery management
     - **Property 23: Gallery Ordering Is Preserved**
     - **Property 24: Gallery Deletion Removes from Storage and Records**
     - **Validates: Requirements 14.3, 14.4, 14.5**
 
-- [ ] 17. Final checkpoint — full test suite and E2E
+- [x] 17. Final checkpoint — full test suite and E2E
   - Run full Vitest unit and property test suite; all tests must pass
   - Run Playwright E2E suite covering all 4 critical journeys: register→book→cancel, admin approve, maintenance mode, gallery reorder
   - Verify Vercel deployment preview; check public pages render content from Supabase

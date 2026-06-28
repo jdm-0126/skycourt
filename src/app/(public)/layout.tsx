@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Box from "@mui/material/Box";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { createClient } from "@/lib/supabase/server";
@@ -57,7 +58,9 @@ export default async function PublicLayout({
   return (
     <>
       <Navbar />
-      {children}
+      <Box component="div" sx={{ minHeight: "100vh" }}>
+        {children}
+      </Box>
       <Footer />
     </>
   );

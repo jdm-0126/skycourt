@@ -55,31 +55,44 @@ export function resolveRoleLinks(role: UserRole): {
 /**
  * Top navigation bar, rendered as a React Server Component.
  *
- * Reads the current Supabase session to determine the user's role, then
- * computes the appropriate set of navigation links and passes them to the
- * `NavbarClient` client component which handles mobile drawer toggle and
- * the Logout action.
+ * Reads the current Supabase session to determine the user's role, fetches
+ * the site name from system_settings, and passes everything to NavbarClient.
  *
  * Requirements: 23.1, 23.2, 23.3, 23.4
  */
 export default async function Navbar() {
-  // Retrieve the current user from the server-side Supabase client.
-  // `getUser()` validates the JWT with the Supabase Auth server, making it
-  // safe to trust the returned user object for role-based decisions.
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  // Run auth + site-name fetch in parallel
+  const [{ data: { user } }, { data: settingRow }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "site_name")
+      .maybeSingle<{ value: string }>(),
+  ]);
 
   const role = ((user?.app_metadata?.role ?? user?.user_metadata?.role) ?? null) as UserRole;
-
   const { roleLinks, showLogout } = resolveRoleLinks(role);
+
+  // Display name: prefer full_name from user_metadata, fall back to email prefix
+  const displayName: string | null = user
+    ? ((user.user_metadata?.full_name as string | undefined) ??
+       user.email?.split("@")[0] ??
+       null)
+    : null;
+
+  const siteName = settingRow?.value || "Sky Court";
 
   return (
     <NavbarClient
       commonLinks={COMMON_LINKS}
       roleLinks={roleLinks}
       showLogout={showLogout}
+      siteName={siteName}
+      displayName={displayName}
+      userRole={role}
     />
   );
 }

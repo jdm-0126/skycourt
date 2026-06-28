@@ -7,9 +7,9 @@ import { createTheme } from "@mui/material/styles";
 const theme = createTheme({
   palette: {
     primary: {
-      light: "#9FCBAD",
-      main: "#6FCF97", // deep green
-      dark: "#59B292",
+      light: "#4BB8FA",
+      main: "#1591DC", // deep green
+      dark: "#2C5EAD",
       contrastText: "#ffffff",
     },
     secondary: {
@@ -88,7 +88,7 @@ const theme = createTheme({
         },
         containedPrimary: {
           "&:hover": {
-            backgroundColor: "#1b5e20",
+            backgroundColor: "#C4E2F5",
           },
         },
       },

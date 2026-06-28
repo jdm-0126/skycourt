@@ -24,18 +24,23 @@ export async function POST(): Promise<NextResponse> {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fetch the authoritative role from public.users
+  // Fetch the authoritative role from public.users.
+  // Cast to a plain object so TypeScript doesn't narrow the result to `never`
+  // when the generated Supabase types don't yet include the `users` table.
   const { data: userRow, error: dbError } = await supabase
     .from("users")
     .select("role")
     .eq("id", user.id)
-    .single();
+    .single() as unknown as {
+      data: { role: string } | null;
+      error: { message: string } | null;
+    };
 
   if (dbError || !userRow?.role) {
     return NextResponse.json({ error: "User record not found" }, { status: 404 });
   }
 
-  const role = userRow.role as string;
+  const role: string = userRow.role;
 
   // Already in sync — nothing to do
   if (user.app_metadata?.role === role) {

@@ -37,6 +37,8 @@ interface HeroContent {
 
 interface AboutContent {
   text: string;
+  visible?: boolean;
+  promo?: string;
 }
 
 interface RateItem {
@@ -73,6 +75,8 @@ const DEFAULT_HERO: HeroContent = {
 
 const DEFAULT_ABOUT: AboutContent = {
   text: "Sky Court is a premier pickleball facility designed for players of all skill levels. With professionally maintained courts, modern amenities, and a welcoming community, we are committed to making every game an exceptional experience.",
+  visible: true,
+  promo: "",
 };
 
 const DEFAULT_RATES: RateItem[] = [
@@ -186,7 +190,7 @@ export default async function HomePage() {
         aria-label="Hero banner"
         sx={{
           position: "relative",
-          minHeight: { xs: 420, md: 560 },
+          minHeight: { xs: 480, md: 600 },
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -194,8 +198,12 @@ export default async function HomePage() {
           background: "linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #43a047 100%)",
           color: "#fff",
           px: 2,
-          py: { xs: 8, md: 12 },
+          // Extra top padding to push content below the fixed transparent navbar
+          pt: { xs: 16, md: 20 },
+          pb: { xs: 8, md: 12 },
           overflow: "hidden",
+          // Pull section up to sit directly behind the transparent navbar
+          mt: "-64px",
         }}
       >
         {/* Decorative background icon */}
@@ -249,41 +257,46 @@ export default async function HomePage() {
       </Box>
 
       {/* ===================================================================
-          2. About Section — Req 1.2
+          2. About / Promo Section — Req 1.2
+          Visibility and promo text are controlled via Admin > Website Content.
+          When visible=false the section is hidden entirely.
+          When promo text is set it replaces the about text.
       ==================================================================== */}
-      <Box
-        component="section"
-        aria-label="About Sky Court"
-        sx={{ bgcolor: "background.paper", py: { xs: 8, md: 10 } }}
-      >
-        <Container maxWidth="md">
-          <Typography
-            variant="overline"
-            component="p"
-            sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}
-          >
-            Who We Are
-          </Typography>
-          <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 3 }}>
-            About Sky Court
-          </Typography>
-          <Divider
-            sx={{
-              width: 60,
-              borderWidth: 3,
-              borderColor: "primary.main",
-              mb: 4,
-            }}
-          />
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{ lineHeight: 1.85, fontSize: "1.1rem" }}
-          >
-            {about.text}
-          </Typography>
-        </Container>
-      </Box>
+      {(about.visible !== false) && (
+        <Box
+          component="section"
+          aria-label="About Sky Court"
+          sx={{ bgcolor: "background.paper", py: { xs: 8, md: 10 } }}
+        >
+          <Container maxWidth="md">
+            <Typography
+              variant="overline"
+              component="p"
+              sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}
+            >
+              {about.promo ? "Promotions" : "Who We Are"}
+            </Typography>
+            <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 3 }}>
+              {about.promo ? "Special Offer" : "About Sky Court"}
+            </Typography>
+            <Divider
+              sx={{
+                width: 60,
+                borderWidth: 3,
+                borderColor: "primary.main",
+                mb: 4,
+              }}
+            />
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ lineHeight: 1.85, fontSize: "1.1rem" }}
+            >
+              {about.promo || about.text}
+            </Typography>
+          </Container>
+        </Box>
+      )}
 
       {/* ===================================================================
           3. Court Rates — Req 1.3
