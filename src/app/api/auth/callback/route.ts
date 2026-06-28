@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Successful exchange — redirect to login so the user can sign in
-      return NextResponse.redirect(`${origin}/auth/login`);
+      // Successful exchange — redirect to login with a verified flag
+      return NextResponse.redirect(`${origin}/auth/login?verified=1`);
     } catch {
       // Unexpected server error
       return NextResponse.redirect(`${origin}/auth/login?error=auth-error`);

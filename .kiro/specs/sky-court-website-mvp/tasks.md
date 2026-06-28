@@ -69,22 +69,22 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
     - Return all bookings with filters: date range, court, member name, status; require `admin+`
     - _Requirements: 11.1, 11.5_
 
-  - [-] 10.2 Write property test for booking filter correctness
+  - [x] 10.2 Write property test for booking filter correctness
     - **Property 19: Booking Filter Results Are Correct and Complete**
     - **Validates: Requirements 11.5**
 
-  - [ ] 10.3 Implement `PATCH /api/bookings/:id` route handler (admin approve / reschedule)
+  - [x] 10.3 Implement `PATCH /api/bookings/:id` route handler (admin approve / reschedule)
     - Check current status before mutation; if already changed return `409`
     - Approve: set `status = 'Confirmed'`; notify member by email; write audit log
     - Reschedule: update date and time slot; notify member; write audit log
     - _Requirements: 11.2, 11.4, 20.1_
 
-  - [ ] 10.4 Write property tests for admin booking status transitions
+  - [x] 10.4 Write property tests for admin booking status transitions
     - **Property 17: Admin Booking Approval Transition**
     - **Property 18: Admin Booking Reschedule Updates Record**
     - **Validates: Requirements 11.2, 11.4**
 
-  - [ ] 10.5 Implement Admin Dashboard page (`src/app/(admin)/admin/dashboard/page.tsx`)
+  - [x] 10.5 Implement Admin Dashboard page (`src/app/(admin)/admin/dashboard/page.tsx`)
     - Server component; display summary cards: today's bookings, active members, available courts
     - Render recent activity feed and calendar view of bookings
     - _Requirements: 10.1, 10.2, 10.3_
@@ -93,7 +93,7 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
     - **Property 16: Admin Dashboard Stats Match Database State**
     - **Validates: Requirements 10.1**
 
-  - [ ] 10.7 Implement Admin Bookings page (`src/app/(admin)/admin/bookings/page.tsx`)
+  - [~] 10.7 Implement Admin Bookings page (`src/app/(admin)/admin/bookings/page.tsx`)
     - DataTable with columns: member name, court, date, time slot, status
     - Search/filter controls: date range, court, member name, status
     - Approve, cancel, reschedule actions per row; idempotency guard (re-fetch on `409`)
@@ -143,7 +143,7 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
 
 
 - [ ] 11. Admin court management
-  - [ ] 11.1 Implement courts API routes
+  - [~] 11.1 Implement courts API routes
     - `GET /api/courts`: return all courts; public access
     - `POST /api/courts`: validate with `courtSchema`; insert court record; require `admin+`
     - `PATCH /api/courts/:id`: update court (name, hours, status); require `admin+`
@@ -151,30 +151,30 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
     - `DELETE /api/courts/:id/unavailable/:dateId`: remove unavailable date; require `admin+`
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-  - [ ] 11.2 Write property tests for court management invariants
+  - [~] 11.2 Write property tests for court management invariants
     - **Property 20: Court Creation Round-Trip**
     - **Property 21: Updated Court Hours Reflected in Booking Flow**
     - **Property 22: Unavailable Courts Block New Bookings**
     - **Validates: Requirements 12.2, 12.3, 12.4, 12.5**
 
-  - [ ] 11.3 Implement Admin Courts page (`src/app/(admin)/admin/courts/page.tsx`)
+  - [~] 11.3 Implement Admin Courts page (`src/app/(admin)/admin/courts/page.tsx`)
     - List courts with name, operating hours, status; add/edit/delete court forms
     - Toggle court status (available / under maintenance → sets `status = 'Unavailable'`)
     - Manage unavailable dates per court
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
 - [ ] 12. Admin website content and gallery management
-  - [ ] 12.1 Implement `WebsiteContentEditor` client component (`src/components/admin/WebsiteContentEditor.tsx`)
+  - [~] 12.1 Implement `WebsiteContentEditor` client component (`src/components/admin/WebsiteContentEditor.tsx`)
     - Load current content from `GET /api/content/:section` per section
     - Editable sections: hero, about, contact details, operating hours, court rates, FAQ
     - Submit via `PATCH /api/content/:section`; show success Snackbar; preview panel
     - _Requirements: 13.1, 13.2, 13.3_
 
-  - [ ] 12.2 Implement Admin Website page (`src/app/(admin)/admin/website/page.tsx`)
+  - [~] 12.2 Implement Admin Website page (`src/app/(admin)/admin/website/page.tsx`)
     - Compose `WebsiteContentEditor` components for all editable sections
     - _Requirements: 13.1, 13.2, 13.3_
 
-  - [ ] 12.3 Implement Admin Gallery page (`src/app/(admin)/admin/gallery/page.tsx`)
+  - [~] 12.3 Implement Admin Gallery page (`src/app/(admin)/admin/gallery/page.tsx`)
     - Display all gallery images with upload, delete, and drag-to-reorder controls
     - Call `POST /api/gallery` for uploads; `DELETE /api/gallery/:id` for deletes; `PATCH /api/gallery/order` for reorder
     - Show inline error on upload failure
@@ -221,44 +221,44 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
 
 
 - [ ] 13. Admin contact messages, reports, and user management
-  - [ ] 13.1 Implement contact messages API routes
+  - [~] 13.1 Implement contact messages API routes
     - `GET /api/contact`: list all messages; require `admin+`
     - `PATCH /api/contact/:id`: mark replied or archive (archive overrides reply status); require `admin+`
     - _Requirements: 15.1, 15.2, 15.3_
 
-  - [ ] 13.2 Write property test for contact message status transitions
+  - [~] 13.2 Write property test for contact message status transitions
     - **Property 25: Contact Message Inbox Completeness**
     - **Property 26: Contact Message Status Transitions**
     - **Validates: Requirements 15.1, 15.2, 15.3**
 
-  - [ ] 13.3 Implement Admin Messages page (`src/app/(admin)/admin/messages/page.tsx`)
+  - [~] 13.3 Implement Admin Messages page (`src/app/(admin)/admin/messages/page.tsx`)
     - DataTable with columns: sender name, email, date, reply status
     - Default inbox hides archived messages; mark replied / archive actions
     - _Requirements: 15.1, 15.2, 15.3_
 
-  - [ ] 13.4 Implement reports API routes
+  - [~] 13.4 Implement reports API routes
     - `GET /api/reports`: return aggregated metrics for `?range=daily|weekly|monthly`; require `admin+`
     - `GET /api/reports/export`: generate and stream XLSX (`xlsx` library) or PDF (`jsPDF`) file; require `admin+`
     - _Requirements: 16.1, 16.2, 16.3, 16.4_
 
-  - [ ] 13.5 Write property test for report metrics accuracy
+  - [~] 13.5 Write property test for report metrics accuracy
     - **Property 27: Report Metrics Match Actual Data**
     - **Validates: Requirements 16.2**
 
-  - [ ] 13.6 Implement Admin Reports page (`src/app/(admin)/admin/reports/page.tsx`)
+  - [~] 13.6 Implement Admin Reports page (`src/app/(admin)/admin/reports/page.tsx`)
     - Time range selector (daily, weekly, monthly); metrics cards; Export to Excel and Export to PDF buttons
     - _Requirements: 16.1, 16.2, 16.3, 16.4_
 
-  - [ ] 13.7 Implement users API routes
+  - [~] 13.7 Implement users API routes
     - `GET /api/users`: list members; require `admin+`
     - `PATCH /api/users/:id/status`: activate/deactivate member; require `admin+`; return error if reactivating already-active account
     - _Requirements: 17.1, 17.2, 17.3_
 
-  - [ ] 13.8 Write property test for member deactivation prevents login
+  - [~] 13.8 Write property test for member deactivation prevents login
     - **Property 28: Member Account Deactivation Prevents Login**
     - **Validates: Requirements 17.2, 17.3**
 
-  - [ ] 13.9 Implement Admin Users page (`src/app/(admin)/admin/users/page.tsx`)
+  - [~] 13.9 Implement Admin Users page (`src/app/(admin)/admin/users/page.tsx`)
     - DataTable with columns: name, email, registration date, status
     - Activate/deactivate actions; inline error when reactivating already-active account
     - _Requirements: 17.1, 17.2, 17.3_
@@ -304,109 +304,109 @@ This plan converts the Sky Court design into incremental coding tasks for a Next
 
 
 - [ ] 14. Super admin panel
-  - [ ] 14.1 Implement admin account management API routes
+  - [~] 14.1 Implement admin account management API routes
     - `POST /api/users/admin`: create admin account (name, email, password); assign `role = 'admin'`; write audit log; require `super_admin`
     - `PATCH /api/users/:id/admin-status`: deactivate/reactivate admin; on deactivate terminate all active sessions via Supabase Admin SDK; require `super_admin`
     - _Requirements: 18.1, 18.2, 18.3, 18.4_
 
-  - [ ] 14.2 Write property tests for admin account management
+  - [~] 14.2 Write property tests for admin account management
     - **Property 29: Admin Account Creation Assigns Admin Role**
     - **Property 30: Admin Deactivation Terminates All Sessions**
     - **Validates: Requirements 18.1, 18.2, 18.4**
 
-  - [ ] 14.3 Implement Super Admin — Admins page (`src/app/(admin)/superadmin/admins/page.tsx`)
+  - [~] 14.3 Implement Super Admin — Admins page (`src/app/(admin)/superadmin/admins/page.tsx`)
     - List all admin accounts with name, email, status; create admin form; deactivate/reactivate actions
     - _Requirements: 18.1, 18.2, 18.3, 18.4_
 
-  - [ ] 14.4 Implement roles and permissions API routes
+  - [~] 14.4 Implement roles and permissions API routes
     - `GET /api/roles`: list roles with permissions; require `super_admin`
     - `PATCH /api/roles/:id`: update role permissions; guard against removing super_admin core permissions; write audit log; require `super_admin`
     - _Requirements: 19.1, 19.2, 19.3_
 
-  - [ ] 14.5 Write property tests for role permission management
+  - [~] 14.5 Write property tests for role permission management
     - **Property 31: Role Permission Changes Apply to Active Sessions**
     - **Property 32: Super Admin Core Permissions Cannot Be Removed**
     - **Validates: Requirements 19.2, 19.3**
 
-  - [ ] 14.6 Implement Super Admin — Roles page (`src/app/(admin)/superadmin/roles/page.tsx`)
+  - [~] 14.6 Implement Super Admin — Roles page (`src/app/(admin)/superadmin/roles/page.tsx`)
     - Display all roles with permissions; inline editor; guard UI for super_admin role core permissions
     - _Requirements: 19.1, 19.2, 19.3_
 
-  - [ ] 14.7 Implement audit logs API route and page
+  - [~] 14.7 Implement audit logs API route and page
     - `GET /api/audit-logs`: list entries with filters (date range, user, action type); require `super_admin`
     - Page (`src/app/(admin)/superadmin/audit-logs/page.tsx`): DataTable with timestamp, user, action type, affected record; filter controls
     - _Requirements: 20.1, 20.2, 20.3_
 
-  - [ ] 14.8 Write property tests for audit log generation and filtering
+  - [~] 14.8 Write property tests for audit log generation and filtering
     - **Property 33: Audit Log Generated for Every Specified Action**
     - **Property 34: Audit Log Filter Returns Correct Entries**
     - **Validates: Requirements 20.1, 20.3**
 
-  - [ ] 14.9 Implement database backup API routes and page
+  - [~] 14.9 Implement database backup API routes and page
     - `POST /api/backup`: trigger Supabase export; create `backup_history` record with `status = 'in_progress'`; write audit log; require `super_admin`
     - `GET /api/backup`: return backup history list; require `super_admin`
     - Atomically update `status` and `completed_at` on completion; set `status = 'failed'` with error message on failure
     - Page (`src/app/(admin)/superadmin/backup/page.tsx`): trigger button, status display, backup history list
     - _Requirements: 21.1, 21.2, 21.3, 21.4_
 
-  - [ ] 14.10 Write property test for backup completion atomicity
+  - [~] 14.10 Write property test for backup completion atomicity
     - **Property 35: Backup Completion Is Atomic**
     - **Validates: Requirements 21.3**
 
-  - [ ] 14.11 Implement system settings API routes and page
+  - [~] 14.11 Implement system settings API routes and page
     - `GET /api/settings`: return all settings; require `super_admin`
     - `PATCH /api/settings`: update settings (site name, contact email, maintenance_mode); require `super_admin`
     - Page (`src/app/(admin)/superadmin/website-settings/page.tsx`): form for site name, contact email, maintenance mode toggle
     - _Requirements: 22.1, 22.2, 22.3_
 
-  - [ ] 14.12 Write property test for maintenance mode controls public access
+  - [~] 14.12 Write property test for maintenance mode controls public access
     - **Property 36: Maintenance Mode Controls Public Access**
     - **Validates: Requirements 22.2, 22.3**
 
 - [ ] 15. Court booking flow
-  - [ ] 15.1 Implement booking slots API route
+  - [~] 15.1 Implement booking slots API route
     - `GET /api/bookings/slots?courtId=&date=`: generate slots from court operating hours; subtract existing `pending/confirmed` bookings; exclude court unavailable dates
     - _Requirements: 7.2_
 
-  - [ ] 15.2 Write property test for slot availability accuracy
+  - [~] 15.2 Write property test for slot availability accuracy
     - **Property 10: Slot Availability Is Accurate**
     - **Validates: Requirements 7.2**
 
-  - [ ] 15.3 Implement `POST /api/bookings` route handler
+  - [~] 15.3 Implement `POST /api/bookings` route handler
     - Validate `bookingSchema`; check slot conflict with `SELECT ... FOR UPDATE`; insert booking with `status = 'Pending'`; send confirmation email; write audit log
     - Return `409` on conflict; `422` for unavailable court or unavailable date
     - _Requirements: 7.3, 7.4, 7.5, 7.7, 20.1_
 
-  - [ ] 15.4 Write property tests for booking creation invariants
+  - [~] 15.4 Write property tests for booking creation invariants
     - **Property 11: Confirmed Booking Has Pending Status**
     - **Property 12: No Double-Booking of the Same Slot**
     - **Validates: Requirements 7.3, 7.5, 7.7**
 
-  - [ ] 15.5 Implement `BookingFlow` client component (`src/components/booking/BookingFlow.tsx`)
+  - [~] 15.5 Implement `BookingFlow` client component (`src/components/booking/BookingFlow.tsx`)
     - Multi-step wizard: DatePicker → CourtSelector → SlotPicker → ConfirmStep
     - Fetch fresh slot data at each step transition; on `409` at confirm: clear slot, show error Alert, return to SlotPicker
     - On success: redirect to booking success page with booking details
     - _Requirements: 7.1, 7.2, 7.3, 7.5, 7.6_
 
-  - [ ] 15.6 Implement Booking pages
+  - [~] 15.6 Implement Booking pages
     - `src/app/(member)/bookings/new/page.tsx`: render `BookingFlow`
     - `src/app/(member)/bookings/[id]/page.tsx`: booking detail / success page
     - _Requirements: 7.1, 7.6_
 
 - [ ] 16. Gallery API routes
-  - [ ] 16.1 Implement gallery API routes
+  - [~] 16.1 Implement gallery API routes
     - `GET /api/gallery`: return images ordered by `display_order ASC`; public access
     - `POST /api/gallery`: upload file to Supabase Storage; insert `gallery_images` record; require `admin+`; return `400` with `FILE_TOO_LARGE` or `UNSUPPORTED_TYPE` code on failure
     - `DELETE /api/gallery/:id`: remove from Supabase Storage and delete DB record; require `admin+`
     - `PATCH /api/gallery/order`: rewrite all `display_order` values in a single transaction; require `admin+`
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
 
-  - [ ] 16.2 Write property tests for gallery management
+  - [~] 16.2 Write property tests for gallery management
     - **Property 23: Gallery Ordering Is Preserved**
     - **Property 24: Gallery Deletion Removes from Storage and Records**
     - **Validates: Requirements 14.3, 14.4, 14.5**
 
-- [ ] 17. Final checkpoint — full test suite and E2E
+- [~] 17. Final checkpoint — full test suite and E2E
   - Run full Vitest unit and property test suite; all tests must pass
   - Run Playwright E2E suite covering all 4 critical journeys: register→book→cancel, admin approve, maintenance mode, gallery reorder
   - Verify Vercel deployment preview; check public pages render content from Supabase

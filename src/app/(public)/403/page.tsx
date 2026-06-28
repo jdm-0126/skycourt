@@ -1,12 +1,11 @@
+
 import type { Metadata } from "next";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import NextLink from "next/link";
+import ForbiddenActions from "./ForbiddenActions";
 
 // ---------------------------------------------------------------------------
 // Metadata
@@ -100,26 +99,7 @@ export default function ForbiddenPage() {
           </Typography>
 
           {/* Actions */}
-          <Box sx={{ display: "flex", justifyContent: "center", gap: 2, flexWrap: "wrap" }}>
-            <Button
-              component={NextLink}
-              href="/"
-              variant="contained"
-              color="primary"
-              startIcon={<HomeOutlinedIcon />}
-            >
-              Go to Home
-            </Button>
-
-            <Button
-              component={NextLink}
-              href="/member/dashboard"
-              variant="outlined"
-              color="primary"
-            >
-              My Dashboard
-            </Button>
-          </Box>
+          <ForbiddenActions />
         </Paper>
       </Container>
     </Box>

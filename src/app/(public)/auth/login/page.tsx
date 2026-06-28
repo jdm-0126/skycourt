@@ -14,7 +14,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import NextLink from "next/link";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -34,6 +34,8 @@ import { dashboardForRole } from "@/lib/auth/dashboard-redirect";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isVerified = searchParams.get("verified") === "1";
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -91,6 +93,13 @@ export default function LoginPage() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Welcome back! Enter your credentials to continue.
         </Typography>
+
+        {/* Email verified success banner — Req 4.7 */}
+        {isVerified && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Email verified! You can now log in.
+          </Alert>
+        )}
 
         {/* Server error banner — Req 5.3, 5.4 */}
         {serverError && (
