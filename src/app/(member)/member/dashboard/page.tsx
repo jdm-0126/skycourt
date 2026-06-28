@@ -170,7 +170,7 @@ export default async function MemberDashboardPage() {
             </Box>
 
             {/* Quick action — Book a Court */}
-            <NextLink href="/bookings/new" style={{ textDecoration: "none", alignSelf: "stretch" }}>
+            <NextLink href="/member/bookings/new" style={{ textDecoration: "none", alignSelf: "stretch" }}>
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}

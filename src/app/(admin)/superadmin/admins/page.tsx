@@ -1,0 +1,122 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import SuperAdminAdminsClient, {
+  type AdminAccount,
+} from "./SuperAdminAdminsClient";
+
+// ---------------------------------------------------------------------------
+// Metadata
+// ---------------------------------------------------------------------------
+
+export const metadata: Metadata = {
+  title: "Admins",
+  description:
+    "Manage admin accounts — create, activate, or deactivate admin access.",
+};
+
+// ---------------------------------------------------------------------------
+// Data helpers
+// ---------------------------------------------------------------------------
+
+async function fetchAllAdmins(): Promise<AdminAccount[]> {
+  const adminClient = createAdminClient();
+
+  const { data, error } = await adminClient
+    .from("users")
+    .select("id, full_name, email, role, status, created_at, updated_at")
+    .eq("role", "admin")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[SuperAdminAdmins] Failed to fetch admins:", error.message);
+    return [];
+  }
+
+  return (data ?? []) as AdminAccount[];
+}
+
+// ---------------------------------------------------------------------------
+// Super Admin — Admins Page (Server Component Shell)
+//
+// Fetches the initial list of admin accounts server-side, then hands off to
+// SuperAdminAdminsClient for interactive create/activate/deactivate actions.
+//
+// Requirements: 18.1, 18.2, 18.3, 18.4
+// ---------------------------------------------------------------------------
+
+export default async function SuperAdminAdminsPage() {
+  // Auth guard — middleware protects this route, but verify defensively
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    redirect("/auth/login");
+  }
+
+  const admins = await fetchAllAdmins();
+
+  return (
+    <Box component="article" aria-label="Super admin — admin accounts management">
+      {/* ===================================================================
+          Page Header
+      =================================================================== */}
+      <Box
+        component="header"
+        sx={{
+          background:
+            "linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%)",
+          color: "#fff",
+          py: { xs: 4, md: 5 },
+          px: 2,
+        }}
+      >
+        <Container maxWidth="xl">
+          <Typography
+            variant="overline"
+            component="p"
+            sx={{
+              color: "rgba(255,255,255,0.75)",
+              fontWeight: 700,
+              letterSpacing: 2,
+              mb: 0.5,
+            }}
+          >
+            Super Admin
+          </Typography>
+          <Typography
+            variant="h4"
+            component="h1"
+            fontWeight={800}
+            sx={{ textShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
+          >
+            Admins
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: "rgba(255,255,255,0.8)", mt: 0.5 }}
+          >
+            Create admin accounts and manage their access status.
+          </Typography>
+        </Container>
+      </Box>
+
+      {/* ===================================================================
+          Content
+      =================================================================== */}
+      <Box sx={{ py: { xs: 3, md: 4 } }}>
+        <Container maxWidth="xl">
+          <SuperAdminAdminsClient initialAdmins={admins} />
+        </Container>
+      </Box>
+    </Box>
+  );
+}

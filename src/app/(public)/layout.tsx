@@ -31,7 +31,7 @@ async function getMaintenanceAndRole(): Promise<{
     ]);
 
     const role =
-      (userData.user?.app_metadata?.role as string | undefined) ?? null;
+      ((userData.user?.app_metadata?.role ?? userData.user?.user_metadata?.role) as string | undefined) ?? null;
     const maintenance = settingData?.value === "true";
 
     return { maintenance, role };

@@ -87,7 +87,14 @@ export async function middleware(request: NextRequest) {
     // Auth service unreachable — treat as unauthenticated.
   }
 
-  const role = (user?.app_metadata?.role ?? null) as Role | null;
+  // Role is written to user_metadata during signUp (client-side) and ideally
+  // promoted to app_metadata by a DB trigger.  Until the trigger is in place,
+  // fall back to user_metadata so that newly registered members and admins
+  // created via the admin API are not incorrectly redirected to /403.
+  const userAny = user as Record<string, unknown> | null;
+  const appMetaRole = (userAny?.app_metadata as Record<string, unknown> | undefined)?.role;
+  const userMetaRole = (userAny?.user_metadata as Record<string, unknown> | undefined)?.role;
+  const role = ((appMetaRole ?? userMetaRole) ?? null) as Role | null;
 
   // -------------------------------------------------------------------------
   // Maintenance mode — handled at the page/layout level (server components),

@@ -83,11 +83,40 @@ function LoginForm() {
       return;
     }
 
-    // Req 5.2 — successful login; redirect to role-appropriate dashboard
+    // Req 5.2 — redirect to role-appropriate dashboard.
+    // Always query the users table for the authoritative role, since
+    // app_metadata and user_metadata may be stale or missing (e.g. for
+    // accounts created via the admin API or manually in the database).
     const session = authData.session;
-    const appMeta = (session?.user?.app_metadata ?? {}) as Record<string, unknown>;
-    const userMeta = (session?.user?.user_metadata ?? {}) as Record<string, unknown>;
-    const destination = dashboardForRole(appMeta, userMeta);
+
+    let destination = "/";
+
+    if (session?.user?.id) {
+      const { data: userRow } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      const role = (userRow as { role?: string } | null)?.role;
+
+      if (role) {
+        destination = dashboardForRole({ role }, {});
+
+        // Sync role into app_metadata so the edge middleware can read it
+        // from the JWT on all subsequent requests without a DB query.
+        if (session.user.app_metadata?.role !== role) {
+          void fetch("/api/auth/sync-role", { method: "POST" });
+        }
+      }
+    }
+
+    // Fall back to metadata if the users table query failed
+    if (destination === "/") {
+      const appMeta = (session?.user?.app_metadata ?? {}) as Record<string, unknown>;
+      const userMeta = (session?.user?.user_metadata ?? {}) as Record<string, unknown>;
+      destination = dashboardForRole(appMeta, userMeta);
+    }
 
     router.push(destination);
   };

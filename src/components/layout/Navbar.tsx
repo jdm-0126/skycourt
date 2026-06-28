@@ -71,7 +71,7 @@ export default async function Navbar() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const role = (user?.app_metadata?.role ?? null) as UserRole;
+  const role = ((user?.app_metadata?.role ?? user?.user_metadata?.role) ?? null) as UserRole;
 
   const { roleLinks, showLogout } = resolveRoleLinks(role);
 

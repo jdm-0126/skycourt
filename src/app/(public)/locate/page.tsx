@@ -51,11 +51,11 @@ interface HoursContent {
 // Fallback defaults — shown when DB rows are missing / on fetch error
 // ---------------------------------------------------------------------------
 
-const DEFAULT_ADDRESS = "123 Pickleball Drive, Metro Manila, Philippines";
+const DEFAULT_ADDRESS = "Sky Court Porac, Pampanga, Philippines";
 
 // A generic Manila-area Google Maps embed (Rizal Park area as a placeholder)
 const DEFAULT_MAP_URL =
-  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.802!2d120.9842!3d14.5995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397ca03571ec38b%3A0xa8a8a8a8a8a8a8a8!2sManila%2C%20Metro%20Manila%2C%20Philippines!5e0!3m2!1sen!2sph!4v1700000000000!5m2!1sen!2sph";
+  "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d7705.160136330796!2d120.5344421!3d15.0713258!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3396f4bbf6553b57%3A0x312e6691f4cd169e!2sPuregold%20Jr.%20-%20Porac!5e0!3m2!1sen!2sph!4v1782640143692!5m2!1sen!2sph";
 
 const DEFAULT_HOURS: HoursContent = {
   monday: { open: "8:00 AM", close: "10:00 PM" },
