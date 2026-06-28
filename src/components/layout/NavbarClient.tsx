@@ -19,6 +19,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -140,9 +141,13 @@ export default function NavbarClient({
           color: "primary.contrastText",
         }}
       >
-        <Typography variant="h6" fontWeight={700}>
-          {siteName}
-        </Typography>
+        <Image
+          src="/assets/sky-court-logo.png"
+          alt="Sky Court logo"
+          width={100}
+          height={34}
+          style={{ objectFit: "contain", filter: "brightness(0) invert(1)" }}
+        />
         <IconButton
           color="inherit"
           onClick={toggleDrawer(false)}
@@ -195,20 +200,27 @@ export default function NavbarClient({
       <AppBar position="sticky" color="primary" enableColorOnDark>
         <Toolbar sx={{ gap: 1 }}>
           {/* Brand / logo */}
-          <Typography
-            variant="h6"
-            fontWeight={700}
+          <Box
             component={Link}
             href="/"
             sx={{
-              color: "inherit",
+              display: "flex",
+              alignItems: "center",
               textDecoration: "none",
               flexGrow: isMobile ? 1 : 0,
               mr: isMobile ? 0 : 3,
             }}
+            aria-label="Sky Court — go to home page"
           >
-            {siteName}
-          </Typography>
+            <Image
+              src="/assets/sky-court-logo.png"
+              alt="Sky Court logo"
+              width={120}
+              height={40}
+              style={{ objectFit: "contain", filter: "brightness(0) invert(1)" }}
+              priority
+            />
+          </Box>
 
           {/* Desktop nav — spacer + links */}
           {!isMobile && (

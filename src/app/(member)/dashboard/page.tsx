@@ -170,26 +170,26 @@ export default async function MemberDashboardPage() {
             </Box>
 
             {/* Quick action — Book a Court */}
-            <Button
-              component={NextLink}
-              href="/bookings/new"
-              variant="contained"
-              startIcon={<AddIcon />}
-              sx={{
-                bgcolor: "rgba(255,255,255,0.15)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.4)",
-                backdropFilter: "blur(4px)",
-                "&:hover": {
-                  bgcolor: "rgba(255,255,255,0.25)",
-                },
-                flexShrink: 0,
-                alignSelf: { xs: "stretch", sm: "auto" },
-              }}
-              aria-label="Book a new court"
-            >
-              Book a Court
-            </Button>
+            <NextLink href="/bookings/new" style={{ textDecoration: "none", alignSelf: "stretch" }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.15)",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.4)",
+                  backdropFilter: "blur(4px)",
+                  "&:hover": {
+                    bgcolor: "rgba(255,255,255,0.25)",
+                  },
+                  flexShrink: 0,
+                  width: "100%",
+                }}
+                aria-label="Book a new court"
+              >
+                Book a Court
+              </Button>
+            </NextLink>
           </Box>
         </Container>
       </Box>

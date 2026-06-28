@@ -1,7 +1,6 @@
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Divider from "@mui/material/Divider";
-import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import NextLink from "next/link";
@@ -72,17 +71,13 @@ export default function Footer() {
             aria-label="Footer navigation"
           >
             {NAV_LINKS.map((link) => (
-              <Link
+              <NextLink
                 key={link.href}
-                component={NextLink}
                 href={link.href}
-                color="inherit"
-                underline="hover"
-                variant="body2"
-                sx={{ color: "rgba(255,255,255,0.85)" }}
+                className="footer-link"
               >
                 {link.label}
-              </Link>
+              </NextLink>
             ))}
           </Stack>
         </Stack>

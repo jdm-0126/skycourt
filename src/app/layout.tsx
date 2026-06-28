@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ThemeRegistry from "@/components/ui/ThemeRegistry";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: {

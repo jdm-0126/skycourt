@@ -1,0 +1,12 @@
+/* Sky Court — global styles */
+
+/* Footer navigation links */
+.footer-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.footer-link:hover {
+  text-decoration: underline;
+}

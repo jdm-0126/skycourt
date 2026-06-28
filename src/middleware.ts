@@ -1,6 +1,5 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import type { Database } from "@/lib/supabase/types";
 
 // ---------------------------------------------------------------------------
 // Route protection configuration
@@ -15,18 +14,6 @@ const PROTECTED_ROUTES: Array<{ prefix: string; allowedRoles: Role[] }> = [
   { prefix: "/admin", allowedRoles: ["admin", "super_admin"] },
   { prefix: "/superadmin", allowedRoles: ["super_admin"] },
 ];
-
-/**
- * Public routes that are intercepted when maintenance mode is active.
- * Auth routes are listed separately so we can always let admins through.
- */
-const PUBLIC_ROUTES = ["/", "/locate", "/contact", "/auth"];
-
-function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some(
-    (r) => pathname === r || pathname.startsWith(r + "/")
-  );
-}
 
 function getProtectedRoute(
   pathname: string
@@ -50,71 +37,69 @@ function getProtectedRoute(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Guard: if env vars are missing (e.g. during build-time static analysis)
+  // just pass the request through rather than crashing the edge function.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return NextResponse.next({ request });
+  }
+
   // Build a mutable response that Supabase can attach refreshed cookies to.
   let supabaseResponse = NextResponse.next({ request });
 
   // Create a Supabase client that reads / writes cookies via the middleware
   // request/response pair — the only safe pattern at the Edge.
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(
-          cookiesToSet: { name: string; value: string; options: CookieOptions }[]
-        ) {
-          // First apply to the request so the rest of this function sees them.
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          // Re-create the response so all set-cookies make it to the client.
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(
+        cookiesToSet: { name: string; value: string; options: CookieOptions }[]
+      ) {
+        // First apply to the request so the rest of this function sees them.
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        );
+        // Re-create the response so all set-cookies make it to the client.
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
 
   // IMPORTANT: getUser() must be called to trigger the session refresh logic
   // inside @supabase/ssr.  Do NOT remove this call even if `user` is unused
   // in some branches.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  //
+  // Wrapped in try/catch so a transient auth-server failure never crashes
+  // the edge function — we fail open (unauthenticated) and let the protected
+  // route check redirect to login if needed.
+  let user: { app_metadata?: Record<string, unknown> } | null = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // Auth service unreachable — treat as unauthenticated.
+  }
 
   const role = (user?.app_metadata?.role ?? null) as Role | null;
 
   // -------------------------------------------------------------------------
-  // 1. Maintenance mode — intercept public routes (except for admin/super_admin)
+  // Maintenance mode — handled at the page/layout level (server components),
+  // NOT here in the edge middleware.  Doing a DB query on every edge request
+  // is fragile and can cause MIDDLEWARE_INVOCATION_FAILURE on cold starts.
+  //
+  // The root layout server component reads the maintenance_mode setting and
+  // redirects guests/members to /maintenance when it is enabled.
   // -------------------------------------------------------------------------
-  if (isPublicRoute(pathname) && role !== "admin" && role !== "super_admin") {
-    try {
-      const { data: setting } = await supabase
-        .from("system_settings")
-        .select("value")
-        .eq("key", "maintenance_mode")
-        .single<{ value: string }>();
-
-      if (setting?.value === "true") {
-        // Don't redirect if we're already on the maintenance page to avoid loops.
-        if (pathname !== "/maintenance") {
-          const maintenanceUrl = request.nextUrl.clone();
-          maintenanceUrl.pathname = "/maintenance";
-          return NextResponse.redirect(maintenanceUrl);
-        }
-      }
-    } catch {
-      // If the DB is unreachable during maintenance check, fail open (allow access).
-    }
-  }
 
   // -------------------------------------------------------------------------
-  // 2. Protected routes — authentication & role enforcement
+  // Protected routes — authentication & role enforcement
   // -------------------------------------------------------------------------
   const protectedRoute = getProtectedRoute(pathname);
 
@@ -136,7 +121,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // -------------------------------------------------------------------------
-  // 3. Pass through — return the (potentially cookie-refreshed) response
+  // Pass through — return the (potentially cookie-refreshed) response
   // -------------------------------------------------------------------------
   return supabaseResponse;
 }
