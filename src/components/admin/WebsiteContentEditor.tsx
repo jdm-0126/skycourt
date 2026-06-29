@@ -13,13 +13,16 @@
  *   about   — text
  *   contact — phone, email, facebook_url
  *   hours   — monday…sunday: { open, close }
- *   rates   — items: [{ label, price, note? }]
+ *   rates   — items: [{ tier, price, per, subtitle, description, features[], cta, ctaHref, highlighted? }]
  *   faq     — items: [{ question, answer }]
  *
  * Requirements: 13.1, 13.2, 13.3
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import Accordion from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -38,6 +41,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
@@ -88,9 +92,15 @@ interface HoursContent {
 }
 
 interface RateItem {
-  label: string;
+  tier: string;
   price: string;
-  note?: string;
+  per: string;
+  subtitle: string;
+  description: string;
+  features: string[];
+  cta: string;
+  ctaHref: string;
+  highlighted?: boolean;
 }
 interface RatesContent {
   items: RateItem[];
@@ -141,7 +151,21 @@ function defaultContent(section: ContentSection): SectionContent {
       };
     }
     case "rates":
-      return { items: [{ label: "", price: "", note: "" }] };
+      return {
+        items: [
+          {
+            tier: "",
+            price: "",
+            per: "/hr",
+            subtitle: "",
+            description: "",
+            features: [""],
+            cta: "Book a Court",
+            ctaHref: "/member/bookings/new",
+            highlighted: false,
+          },
+        ],
+      };
     case "faq":
       return { items: [{ question: "", answer: "" }] };
   }
@@ -361,15 +385,55 @@ function HoursEditor({ data, onChange }: FormProps<HoursContent>) {
 }
 
 function RatesEditor({ data, onChange }: FormProps<RatesContent>) {
-  function updateItem(index: number, field: keyof RateItem, value: string) {
+  function updateField(index: number, field: keyof RateItem, value: string | boolean) {
     const next = data.items.map((item, i) =>
       i === index ? { ...item, [field]: value } : item
     );
     onChange({ items: next });
   }
 
+  function updateFeature(index: number, fi: number, value: string) {
+    const next = data.items.map((item, i) => {
+      if (i !== index) return item;
+      const features = item.features.map((f, j) => (j === fi ? value : f));
+      return { ...item, features };
+    });
+    onChange({ items: next });
+  }
+
+  function addFeature(index: number) {
+    const next = data.items.map((item, i) =>
+      i === index ? { ...item, features: [...(item.features ?? []), ""] } : item
+    );
+    onChange({ items: next });
+  }
+
+  function removeFeature(index: number, fi: number) {
+    const next = data.items.map((item, i) =>
+      i === index
+        ? { ...item, features: item.features.filter((_, j) => j !== fi) }
+        : item
+    );
+    onChange({ items: next });
+  }
+
   function addItem() {
-    onChange({ items: [...data.items, { label: "", price: "", note: "" }] });
+    onChange({
+      items: [
+        ...data.items,
+        {
+          tier: "",
+          price: "",
+          per: "/hr",
+          subtitle: "",
+          description: "",
+          features: [""],
+          cta: "Book a Court",
+          ctaHref: "/member/bookings/new",
+          highlighted: false,
+        },
+      ],
+    });
   }
 
   function removeItem(index: number) {
@@ -377,61 +441,165 @@ function RatesEditor({ data, onChange }: FormProps<RatesContent>) {
   }
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={3}>
       {data.items.map((item, index) => (
-        <Paper
-          key={index}
-          variant="outlined"
-          sx={{ p: 2, borderRadius: 2 }}
-        >
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-            <Typography variant="caption" fontWeight={600} color="text.secondary">
-              Rate Item {index + 1}
+        <Paper key={index} variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+          {/* Card header */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
+              Rate Card {index + 1}{item.tier ? ` — ${item.tier}` : ""}
             </Typography>
             {data.items.length > 1 && (
-              <Tooltip title="Remove this rate item">
+              <Tooltip title="Remove this rate card">
                 <IconButton
                   size="small"
                   color="error"
                   onClick={() => removeItem(index)}
-                  aria-label={`Remove rate item ${index + 1}`}
+                  aria-label={`Remove rate card ${index + 1}`}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
           </Box>
+
           <Stack spacing={1.5}>
+            {/* Row 1: Tier + highlighted toggle */}
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>
+              <TextField
+                label="Tier Label"
+                size="small"
+                value={item.tier}
+                onChange={(e) => updateField(index, "tier", e.target.value)}
+                placeholder="e.g. Walk-in"
+                inputProps={{ "aria-label": `Rate card ${index + 1} tier` }}
+                sx={{ flex: 1 }}
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={!!item.highlighted}
+                    onChange={(e) => updateField(index, "highlighted", e.target.checked)}
+                    color="primary"
+                    size="small"
+                  />
+                }
+                label={<Typography variant="caption">Highlighted</Typography>}
+                sx={{ mt: 0.5, flexShrink: 0 }}
+              />
+            </Box>
+
+            {/* Row 2: Price + per */}
+            <Box sx={{ display: "flex", gap: 1.5 }}>
+              <TextField
+                label="Price"
+                size="small"
+                value={item.price}
+                onChange={(e) => updateField(index, "price", e.target.value)}
+                placeholder="e.g. ₱200"
+                inputProps={{ "aria-label": `Rate card ${index + 1} price` }}
+                sx={{ flex: 2 }}
+              />
+              <TextField
+                label="Per"
+                size="small"
+                value={item.per}
+                onChange={(e) => updateField(index, "per", e.target.value)}
+                placeholder="/hr"
+                inputProps={{ "aria-label": `Rate card ${index + 1} per unit` }}
+                sx={{ flex: 1 }}
+              />
+            </Box>
+
+            {/* Row 3: Subtitle */}
             <TextField
-              label="Label"
-              fullWidth
+              label="Subtitle (caps label below price)"
               size="small"
-              value={item.label}
-              onChange={(e) => updateItem(index, "label", e.target.value)}
-              placeholder="e.g. Standard Rate"
-              inputProps={{ "aria-label": `Rate item ${index + 1} label` }}
+              fullWidth
+              value={item.subtitle}
+              onChange={(e) => updateField(index, "subtitle", e.target.value)}
+              placeholder="e.g. Recreational Play"
+              inputProps={{ "aria-label": `Rate card ${index + 1} subtitle` }}
             />
+
+            {/* Row 4: Description */}
             <TextField
-              label="Price"
-              fullWidth
+              label="Description"
               size="small"
-              value={item.price}
-              onChange={(e) => updateItem(index, "price", e.target.value)}
-              placeholder="e.g. ₱200/hour"
-              inputProps={{ "aria-label": `Rate item ${index + 1} price` }}
-            />
-            <TextField
-              label="Note (optional)"
               fullWidth
-              size="small"
-              value={item.note ?? ""}
-              onChange={(e) => updateItem(index, "note", e.target.value)}
-              placeholder="e.g. Weekends only"
-              inputProps={{ "aria-label": `Rate item ${index + 1} note` }}
+              multiline
+              rows={2}
+              value={item.description}
+              onChange={(e) => updateField(index, "description", e.target.value)}
+              placeholder="Short description shown under the subtitle…"
+              inputProps={{ "aria-label": `Rate card ${index + 1} description` }}
             />
+
+            {/* Row 5: Features checklist */}
+            <Box>
+              <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
+                Features (checklist items)
+              </Typography>
+              <Stack spacing={0.75}>
+                {(item.features ?? []).map((feature, fi) => (
+                  <Box key={fi} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={feature}
+                      onChange={(e) => updateFeature(index, fi, e.target.value)}
+                      placeholder={`Feature ${fi + 1}`}
+                      inputProps={{ "aria-label": `Rate card ${index + 1} feature ${fi + 1}` }}
+                    />
+                    <Tooltip title="Remove feature">
+                      <IconButton
+                        size="small"
+                        onClick={() => removeFeature(index, fi)}
+                        aria-label={`Remove feature ${fi + 1}`}
+                        disabled={(item.features ?? []).length <= 1}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                ))}
+                <Button
+                  size="small"
+                  variant="text"
+                  startIcon={<AddIcon />}
+                  onClick={() => addFeature(index)}
+                  sx={{ alignSelf: "flex-start", mt: 0.25 }}
+                >
+                  Add feature
+                </Button>
+              </Stack>
+            </Box>
+
+            {/* Row 6: CTA label + href */}
+            <Box sx={{ display: "flex", gap: 1.5 }}>
+              <TextField
+                label="Button Label"
+                size="small"
+                value={item.cta}
+                onChange={(e) => updateField(index, "cta", e.target.value)}
+                placeholder="e.g. Book a Court"
+                inputProps={{ "aria-label": `Rate card ${index + 1} button label` }}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                label="Button Link"
+                size="small"
+                value={item.ctaHref}
+                onChange={(e) => updateField(index, "ctaHref", e.target.value)}
+                placeholder="/member/bookings/new"
+                inputProps={{ "aria-label": `Rate card ${index + 1} button href` }}
+                sx={{ flex: 1 }}
+              />
+            </Box>
           </Stack>
         </Paper>
       ))}
+
       <Button
         variant="outlined"
         size="small"
@@ -439,7 +607,7 @@ function RatesEditor({ data, onChange }: FormProps<RatesContent>) {
         onClick={addItem}
         sx={{ alignSelf: "flex-start" }}
       >
-        Add Rate Item
+        Add Rate Card
       </Button>
     </Stack>
   );
@@ -610,18 +778,26 @@ function ContentPreview({ section, content }: PreviewProps) {
         {section === "rates" && (() => {
           const c = content as RatesContent;
           return (
-            <Stack spacing={1}>
+            <Stack spacing={1.5}>
               {c.items.map((item, i) => (
-                <Box key={i}>
-                  <Typography variant="body2" fontWeight={600}>
-                    {item.label || <em style={{ color: "#bbb" }}>Label</em>}
-                    {" — "}
-                    {item.price || <em style={{ color: "#bbb" }}>Price</em>}
+                <Box key={i} sx={{ p: 1.5, border: "1px solid", borderColor: item.highlighted ? "primary.main" : "divider", borderRadius: 1.5 }}>
+                  <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 1, display: "block" }}>
+                    {item.tier || <em style={{ color: "#bbb" }}>Tier</em>}
                   </Typography>
-                  {item.note && (
-                    <Typography variant="caption" color="text.secondary">
-                      {item.note}
+                  <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                    <Typography variant="h6" fontWeight={800} color="text.primary">
+                      {item.price || "—"}
                     </Typography>
+                    <Typography variant="caption" color="text.secondary">{item.per}</Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, display: "block" }}>
+                    {item.subtitle}
+                  </Typography>
+                  {(item.features ?? []).slice(0, 3).map((f, fi) => (
+                    <Typography key={fi} variant="caption" color="text.secondary" sx={{ display: "block" }}>✓ {f}</Typography>
+                  ))}
+                  {(item.features ?? []).length > 3 && (
+                    <Typography variant="caption" color="text.disabled">+{item.features.length - 3} more…</Typography>
                   )}
                 </Box>
               ))}
@@ -739,78 +915,63 @@ export function WebsiteContentEditor({ section }: WebsiteContentEditorProps) {
 
   return (
     <Box component="section" aria-label={`${label} editor`}>
-      <Card>
-        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-          {/* Section title */}
-          <Typography variant="h6" component="h2" fontWeight={700} mb={1}>
-            {label}
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
+      <Accordion
+        defaultExpanded={false}
+        disableGutters
+        elevation={0}
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: "12px !important",
+          "&:before": { display: "none" },
+          overflow: "hidden",
+        }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          aria-controls={`${section}-content`}
+          id={`${section}-header`}
+          sx={{
+            bgcolor: "grey.50",
+            minHeight: 52,
+            "& .MuiAccordionSummary-content": { alignItems: "center", gap: 1 },
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight={700}>{label}</Typography>
+          {saving && <CircularProgress size={14} sx={{ ml: 1 }} />}
+        </AccordionSummary>
 
-          {/* Loading skeleton */}
+        <AccordionDetails sx={{ p: { xs: 2, sm: 3 } }} id={`${section}-content`}>
           {loading ? (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                py: 4,
-                justifyContent: "center",
-              }}
-            >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, py: 4, justifyContent: "center" }}>
               <CircularProgress size={24} />
-              <Typography variant="body2" color="text.secondary">
-                Loading content…
-              </Typography>
+              <Typography variant="body2" color="text.secondary">Loading content…</Typography>
             </Box>
           ) : (
             <>
-              {/* Section-specific form */}
               {section === "hero" && (
-                <HeroEditor
-                  data={draft as HeroContent}
-                  onChange={(d) => setDraft(d)}
-                />
+                <HeroEditor data={draft as HeroContent} onChange={(d) => setDraft(d)} />
               )}
               {section === "about" && (
-                <AboutEditor
-                  data={draft as AboutContent}
-                  onChange={(d) => setDraft(d)}
-                />
+                <AboutEditor data={draft as AboutContent} onChange={(d) => setDraft(d)} />
               )}
               {section === "contact" && (
-                <ContactEditor
-                  data={draft as ContactContent}
-                  onChange={(d) => setDraft(d)}
-                />
+                <ContactEditor data={draft as ContactContent} onChange={(d) => setDraft(d)} />
               )}
               {section === "hours" && (
-                <HoursEditor
-                  data={draft as HoursContent}
-                  onChange={(d) => setDraft(d)}
-                />
+                <HoursEditor data={draft as HoursContent} onChange={(d) => setDraft(d)} />
               )}
               {section === "rates" && (
-                <RatesEditor
-                  data={draft as RatesContent}
-                  onChange={(d) => setDraft(d)}
-                />
+                <RatesEditor data={draft as RatesContent} onChange={(d) => setDraft(d)} />
               )}
               {section === "faq" && (
-                <FaqEditor
-                  data={draft as FaqContent}
-                  onChange={(d) => setDraft(d)}
-                />
+                <FaqEditor data={draft as FaqContent} onChange={(d) => setDraft(d)} />
               )}
 
-              {/* Inline error */}
               {saveError && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  {saveError}
-                </Alert>
+                <Alert severity="error" sx={{ mt: 2 }}>{saveError}</Alert>
               )}
 
-              {/* Save button */}
               <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
                 <Button
                   variant="contained"
@@ -823,28 +984,22 @@ export function WebsiteContentEditor({ section }: WebsiteContentEditorProps) {
                 </Button>
               </Box>
 
-              {/* Live preview (Requirement 13.3) */}
               <Box sx={{ mt: 4 }}>
                 <Divider sx={{ mb: 3 }} />
                 <ContentPreview section={section} content={draft} />
               </Box>
             </>
           )}
-        </CardContent>
-      </Card>
+        </AccordionDetails>
+      </Accordion>
 
-      {/* Success Snackbar */}
       <Snackbar
         open={snackOpen}
         autoHideDuration={4000}
         onClose={() => setSnackOpen(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          onClose={() => setSnackOpen(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
+        <Alert onClose={() => setSnackOpen(false)} severity="success" sx={{ width: "100%" }}>
           {label} saved successfully.
         </Alert>
       </Snackbar>

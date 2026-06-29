@@ -10,9 +10,17 @@ type Role = "member" | "admin" | "super_admin";
 /** Routes that require authentication and the minimum role(s) allowed. */
 const PROTECTED_ROUTES: Array<{ prefix: string; allowedRoles: Role[] }> = [
   // Most permissive first — order matters for prefix matching
-  { prefix: "/member", allowedRoles: ["member", "admin", "super_admin"] },
-  { prefix: "/admin", allowedRoles: ["admin", "super_admin"] },
-  { prefix: "/superadmin", allowedRoles: ["super_admin"] },
+  // Booking pages are intentionally NOT listed here — guests can browse them
+  // but the API will reject unauthenticated submission (401).
+  { prefix: "/member/dashboard", allowedRoles: ["member", "admin", "super_admin"] },
+  { prefix: "/member/profile",   allowedRoles: ["member", "admin", "super_admin"] },
+  { prefix: "/admin",            allowedRoles: ["admin", "super_admin"] },
+  { prefix: "/superadmin",       allowedRoles: ["super_admin"] },
+];
+
+/** Booking paths that are publicly browsable but require member login to submit. */
+const PUBLIC_BOOKING_PREFIXES = [
+  "/member/bookings",
 ];
 
 function getProtectedRoute(

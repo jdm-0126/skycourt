@@ -10,6 +10,7 @@ import Grid from "@mui/material/Grid2";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CheckIcon from "@mui/icons-material/Check";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 
 import { createClient } from "@/lib/supabase/server";
@@ -46,9 +47,15 @@ interface AboutContent {
 }
 
 interface RateItem {
-  label: string;
-  price: string;
-  note?: string;
+  tier: string;          // e.g. "Walk-in"
+  price: string;         // e.g. "₱200"
+  per: string;           // e.g. "/hr" or "/court/hr"
+  subtitle: string;      // e.g. "Recreational Play"
+  description: string;
+  features: string[];    // checklist items
+  cta: string;           // button label
+  ctaHref: string;       // button destination
+  highlighted?: boolean; // border highlight
 }
 
 interface FaqItem {
@@ -84,10 +91,71 @@ const DEFAULT_ABOUT: AboutContent = {
 };
 
 const DEFAULT_RATES: RateItem[] = [
-  { label: "Recreational Play (per hour)", price: "₱200" },
-  { label: "Competitive Play (per hour)", price: "₱250" },
-  { label: "Court Rental (per hour)", price: "₱300", note: "Up to 4 players" },
-  { label: "Monthly Membership", price: "₱1,500", note: "Unlimited recreational play" },
+  {
+    tier: "Walk-in",
+    price: "₱200",
+    per: "/hr",
+    subtitle: "Recreational Play",
+    description: "Drop in anytime during open hours. Perfect for casual games with friends or solo practice.",
+    features: [
+      "Open court access",
+      "Equipment rental available",
+      "No reservation required",
+      "LED-lit courts for night play",
+    ],
+    cta: "Book a Court",
+    ctaHref: "/member/bookings/new",
+    highlighted: false,
+  },
+  {
+    tier: "Competitive",
+    price: "₱250",
+    per: "/hr",
+    subtitle: "Competitive Play",
+    description: "Dedicated court time for serious players. Priority booking and extended sessions available.",
+    features: [
+      "Everything in Walk-in",
+      "Priority court selection",
+      "Scoreboard access",
+      "Coaching & clinics eligible",
+    ],
+    cta: "Book Competitive",
+    ctaHref: "/member/bookings/new",
+    highlighted: false,
+  },
+  {
+    tier: "Court Rental",
+    price: "₱300",
+    per: "/hr",
+    subtitle: "Private Court Rental",
+    description: "Reserve an entire court exclusively for your group. Up to 4 players per court.",
+    features: [
+      "Exclusive court access",
+      "Up to 4 players",
+      "Locker rooms included",
+      "Pro shop discounts",
+    ],
+    cta: "Rent a Court",
+    ctaHref: "/member/bookings/new",
+    highlighted: false,
+  },
+  {
+    tier: "Club / Group",
+    price: "₱400",
+    per: "/court/hr",
+    subtitle: "Club Reservation",
+    description: "Block-book multiple courts for your club. Minimum 4 hours. Courts reducible up to the day before.",
+    features: [
+      "Reserve multiple courts",
+      "Minimum 4 hours",
+      "Flexible court count — reduce up to day before",
+      "Cancellable up to the day before",
+      "Ideal for tournaments & club sessions",
+    ],
+    cta: "Reserve as Club",
+    ctaHref: "/member/bookings/club/new",
+    highlighted: true,
+  },
 ];
 
 const DEFAULT_AMENITIES: string[] = [
@@ -241,19 +309,166 @@ export default async function HomePage() {
         key="rates"
         component="section"
         aria-label="Court rates"
-        sx={{ bgcolor: "background.default", py: { xs: 8, md: 10 } }}
+        sx={{ bgcolor: "#f0f4f0", py: { xs: 8, md: 10 } }}
       >
-        <Container maxWidth="md">
-          <Typography variant="overline" component="p" sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}>Pricing</Typography>
-          <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>Court Rates</Typography>
-          <Divider sx={{ width: 60, borderWidth: 3, borderColor: "primary.main", mb: 5 }} />
-          <Grid container spacing={3}>
-            {rates.map((rate, idx) => (
-              <Grid key={idx} size={{ xs: 12, sm: 6 }}>
-                <Paper elevation={0} sx={{ p: 3, border: "1px solid", borderColor: "divider", borderRadius: 3, height: "100%", display: "flex", flexDirection: "column", gap: 1, transition: "box-shadow 0.2s", "&:hover": { boxShadow: 4 } }}>
-                  <Typography variant="subtitle1" fontWeight={600} color="text.primary">{rate.label}</Typography>
-                  <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ lineHeight: 1 }}>{rate.price}</Typography>
-                  {rate.note && <Typography variant="body2" color="text.secondary">{rate.note}</Typography>}
+        <Container maxWidth="lg">
+          {/* Section header */}
+          <Box sx={{ textAlign: "center", mb: 6 }}>
+            <Typography
+              variant="overline"
+              component="p"
+              sx={{ color: "primary.main", fontWeight: 700, letterSpacing: 2, mb: 1 }}
+            >
+              Pricing
+            </Typography>
+            <Typography variant="h3" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
+              Court Rates
+            </Typography>
+            <Divider sx={{ width: 60, borderWidth: 3, borderColor: "primary.main", mx: "auto", mb: 2 }} />
+            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 520, mx: "auto" }}>
+              Choose the plan that fits your game. All courts are professionally maintained with LED lighting for night play.
+            </Typography>
+          </Box>
+
+          {/* Pricing card grid — driven entirely by DB data */}
+          <Grid container spacing={3} sx={{ alignItems: "stretch" }}>
+            {rates.map((card, idx) => (
+              <Grid key={idx} size={{ xs: 12, sm: 6, lg: 3 }}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    borderRadius: 4,
+                    border: card.highlighted ? "2px solid" : "1px solid",
+                    borderColor: card.highlighted ? "primary.main" : "rgba(0,0,0,0.08)",
+                    bgcolor: "#fff",
+                    overflow: "hidden",
+                    transition: "box-shadow 0.25s, transform 0.25s",
+                    "&:hover": {
+                      boxShadow: "0 8px 32px rgba(27,94,32,0.13)",
+                      transform: "translateY(-2px)",
+                    },
+                  }}
+                >
+                  {/* Card body */}
+                  <Box sx={{ p: 3.5, flex: 1, display: "flex", flexDirection: "column" }}>
+                    {/* Tier label */}
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        color: "primary.main",
+                        fontWeight: 800,
+                        letterSpacing: 2,
+                        fontSize: "0.72rem",
+                        mb: 1.5,
+                        display: "block",
+                      }}
+                    >
+                      {card.tier}
+                    </Typography>
+
+                    {/* Price */}
+                    <Box sx={{ display: "flex", alignItems: "flex-end", gap: 0.5, mb: 0.5 }}>
+                      <Typography
+                        variant="h2"
+                        component="span"
+                        sx={{
+                          fontWeight: 800,
+                          lineHeight: 1,
+                          color: "text.primary",
+                          fontSize: { xs: "2.8rem", md: "3.2rem" },
+                        }}
+                      >
+                        {card.price}
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        component="span"
+                        color="text.secondary"
+                        sx={{ mb: 0.5 }}
+                      >
+                        {card.per}
+                      </Typography>
+                    </Box>
+
+                    {/* Bold subtitle */}
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        fontWeight: 800,
+                        letterSpacing: 1.5,
+                        color: "text.primary",
+                        fontSize: "0.68rem",
+                        mb: 1.5,
+                        display: "block",
+                      }}
+                    >
+                      {card.subtitle}
+                    </Typography>
+
+                    {/* Description */}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ lineHeight: 1.7, mb: 3 }}
+                    >
+                      {card.description}
+                    </Typography>
+
+                    {/* Features checklist */}
+                    <Box
+                      component="ul"
+                      sx={{
+                        listStyle: "none",
+                        p: 0,
+                        m: 0,
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1.25,
+                      }}
+                    >
+                      {(card.features ?? []).map((feature, fi) => (
+                        <Box
+                          key={fi}
+                          component="li"
+                          sx={{ display: "flex", alignItems: "flex-start", gap: 1.25 }}
+                        >
+                          <CheckIcon
+                            sx={{ color: "primary.main", fontSize: 18, mt: "1px", flexShrink: 0 }}
+                            aria-hidden="true"
+                          />
+                          <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                            {feature}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+
+                  {/* Full-width CTA button */}
+                  <Box sx={{ px: 3.5, pb: 3.5 }}>
+                    <NextLink href={card.ctaHref ?? "/member/bookings/new"} style={{ textDecoration: "none", display: "block" }}>
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        size="large"
+                        sx={{
+                          bgcolor: "#1a2e1a",
+                          color: "#fff",
+                          fontWeight: 700,
+                          fontSize: "0.95rem",
+                          py: 1.5,
+                          borderRadius: 2.5,
+                          "&:hover": { bgcolor: "#2e7d32" },
+                        }}
+                      >
+                        {card.cta}
+                      </Button>
+                    </NextLink>
+                  </Box>
                 </Paper>
               </Grid>
             ))}

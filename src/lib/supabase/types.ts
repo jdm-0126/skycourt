@@ -359,6 +359,86 @@ export interface Database {
         };
         Relationships: [];
       };
+      club_reservations: {
+        Row: {
+          id: string;
+          member_id: string;
+          reservation_date: string;
+          start_time: string;
+          end_time: string;
+          duration_hours: number;
+          num_courts: number;
+          total_cost: number;
+          status: "pending" | "confirmed" | "cancelled";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          member_id: string;
+          reservation_date: string;
+          start_time: string;
+          end_time: string;
+          duration_hours: number;
+          num_courts: number;
+          total_cost: number;
+          status?: "pending" | "confirmed" | "cancelled";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          member_id?: string;
+          reservation_date?: string;
+          start_time?: string;
+          end_time?: string;
+          duration_hours?: number;
+          num_courts?: number;
+          total_cost?: number;
+          status?: "pending" | "confirmed" | "cancelled";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "club_reservations_member_id_fkey";
+            columns: ["member_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      club_reservation_courts: {
+        Row: {
+          id: string;
+          reservation_id: string;
+          court_id: string;
+        };
+        Insert: {
+          id?: string;
+          reservation_id: string;
+          court_id: string;
+        };
+        Update: {
+          id?: string;
+          reservation_id?: string;
+          court_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "club_reservation_courts_reservation_id_fkey";
+            columns: ["reservation_id"];
+            referencedRelation: "club_reservations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "club_reservation_courts_court_id_fkey";
+            columns: ["court_id"];
+            referencedRelation: "courts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -27,10 +27,16 @@ import Alert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
 import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import EditCalendarIcon from "@mui/icons-material/EditCalendar";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+
+import BookingsCalendar from "@/components/admin/BookingsCalendar";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -208,6 +214,7 @@ function RescheduleDialog({ open, booking, onClose, onConfirm, loading }: Resche
 export default function AdminBookingsClient({ initialBookings, courts }: Props) {
   // ---- State ----------------------------------------------------------------
   const [bookings, setBookings] = useState<AdminBooking[]>(initialBookings);
+  const [view, setView] = useState<"table" | "calendar">("table");
   const [dateFrom,    setDateFrom]    = useState("");
   const [dateTo,      setDateTo]      = useState("");
   const [courtFilter, setCourtFilter] = useState("");
@@ -477,23 +484,47 @@ export default function AdminBookingsClient({ initialBookings, courts }: Props) 
       </Card>
 
       {/* ===================================================================
-          Bookings Table
+          View toggle + Bookings Table / Calendar
       =================================================================== */}
       <Card>
         <CardContent sx={{ pb: "16px !important" }}>
-          <Typography variant="h6" component="h2" fontWeight={700} mb={2}>
-            All Bookings{" "}
-            <Typography component="span" variant="body2" color="text.secondary" fontWeight={400}>
-              ({bookings.length})
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1 }}>
+            <Typography variant="h6" component="h2" fontWeight={700}>
+              All Bookings{" "}
+              <Typography component="span" variant="body2" color="text.secondary" fontWeight={400}>
+                ({bookings.length})
+              </Typography>
             </Typography>
-          </Typography>
+            <ToggleButtonGroup
+              value={view}
+              exclusive
+              onChange={(_, v) => { if (v) setView(v as "table" | "calendar"); }}
+              size="small"
+              aria-label="View mode"
+            >
+              <ToggleButton value="table" aria-label="Table view">
+                <ViewListIcon fontSize="small" sx={{ mr: 0.5 }} /> List
+              </ToggleButton>
+              <ToggleButton value="calendar" aria-label="Calendar view">
+                <CalendarMonthIcon fontSize="small" sx={{ mr: 0.5 }} /> Calendar
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
 
-          {bookings.length === 0 ? (
+          {view === "calendar" ? (
+            <BookingsCalendar
+              bookings={bookings}
+              actionLoading={actionLoading}
+              onApprove={(b) => void handleApprove(b)}
+              onCancel={(b) => void handleCancel(b)}
+              onReschedule={(b) => setRescheduleTarget(b)}
+            />
+          ) : bookings.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
               No bookings found for the selected filters.
             </Typography>
           ) : (
-            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, overflowX: "auto" }}>
               <Table aria-label="Bookings table" size="small">
                 <TableHead>
                   <TableRow sx={{ bgcolor: "grey.100" }}>

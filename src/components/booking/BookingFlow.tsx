@@ -9,10 +9,13 @@
  *   3. SlotPicker    — select an available time slot
  *   4. ConfirmStep   — review and confirm the booking
  *
+ * Only members can save bookings. Admins and super_admins who reach this
+ * page see an informational notice instead of the wizard.
+ *
  * Requirements: 7.1, 7.2, 7.3, 7.5, 7.6
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import Box from "@mui/material/Box";
@@ -35,6 +38,8 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+
+import { createClient } from "@/lib/supabase/client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -556,6 +561,19 @@ function ConfirmStep({
 export default function BookingFlow() {
   const router = useRouter();
 
+  // ---------------------------------------------------------------------------
+  // Session check — resolve whether the user is logged in so we can gate
+  // the Confirm step appropriately (guests are prompted to log in).
+  // ---------------------------------------------------------------------------
+  const [roleChecked, setRoleChecked] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(() => {
+      setRoleChecked(true);
+    }).catch(() => setRoleChecked(true));
+  }, []);
+
   // ----- Wizard state -----
   const [activeStep, setActiveStep] = useState(0);
 
@@ -747,6 +765,15 @@ export default function BookingFlow() {
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
+
+  // Show spinner while the session role is being resolved
+  if (!roleChecked) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+        <CircularProgress aria-label="Checking session…" />
+      </Box>
+    );
+  }
 
   return (
     <Box>

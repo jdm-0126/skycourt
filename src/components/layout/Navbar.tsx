@@ -22,12 +22,30 @@ export const GUEST_LINKS: NavLink[] = [
 /** Links shown to authenticated members. */
 export const MEMBER_LINKS: NavLink[] = [
   { label: "Book a Court", href: "/member/bookings/new" },
-  { label: "Dashboard", href: "/member/dashboard" },
+  { label: "Club Reservation", href: "/member/bookings/club/new" },
+  { label: "My Bookings", href: "/member/dashboard" },
+  { label: "Profile", href: "/member/profile" },
 ];
 
-/** Links shown to authenticated admins and super_admins. */
+/** Links shown to authenticated admins (not super_admin-only). */
 export const ADMIN_LINKS: NavLink[] = [
-  { label: "Admin Panel", href: "/admin/dashboard" },
+  { label: "Dashboard", href: "/admin/dashboard" },
+  { label: "Bookings", href: "/admin/bookings" },
+  { label: "Courts", href: "/admin/courts" },
+  { label: "Users", href: "/admin/users" },
+  { label: "Reports", href: "/admin/reports" },
+  { label: "Messages", href: "/admin/messages" },
+  { label: "Gallery", href: "/admin/gallery" },
+  { label: "Website", href: "/admin/website" },
+];
+
+/** Extra links shown only to super_admins (appended after ADMIN_LINKS). */
+export const SUPER_ADMIN_LINKS: NavLink[] = [
+  { label: "Admins", href: "/superadmin/admins" },
+  { label: "Roles", href: "/superadmin/roles" },
+  { label: "Audit Logs", href: "/superadmin/audit-logs" },
+  { label: "Backup", href: "/superadmin/backup" },
+  { label: "Site Settings", href: "/superadmin/website-settings" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -36,16 +54,20 @@ export const ADMIN_LINKS: NavLink[] = [
 
 export function resolveRoleLinks(role: UserRole): {
   roleLinks: NavLink[];
+  superAdminLinks: NavLink[];
   showLogout: boolean;
 } {
   if (role === "member") {
-    return { roleLinks: MEMBER_LINKS, showLogout: true };
+    return { roleLinks: MEMBER_LINKS, superAdminLinks: [], showLogout: true };
   }
-  if (role === "admin" || role === "super_admin") {
-    return { roleLinks: ADMIN_LINKS, showLogout: true };
+  if (role === "super_admin") {
+    return { roleLinks: ADMIN_LINKS, superAdminLinks: SUPER_ADMIN_LINKS, showLogout: true };
+  }
+  if (role === "admin") {
+    return { roleLinks: ADMIN_LINKS, superAdminLinks: [], showLogout: true };
   }
   // Guest
-  return { roleLinks: GUEST_LINKS, showLogout: false };
+  return { roleLinks: GUEST_LINKS, superAdminLinks: [], showLogout: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -55,15 +77,17 @@ export function resolveRoleLinks(role: UserRole): {
 /**
  * Top navigation bar, rendered as a React Server Component.
  *
- * Reads the current Supabase session to determine the user's role, fetches
- * the site name from system_settings, and passes everything to NavbarClient.
+ * Role-based link sets:
+ *   guest       → common + guest links (Book, Login, Register)
+ *   member      → common + member links (Book, Club, My Bookings, Profile)
+ *   admin       → common + admin links (Dashboard, Bookings, Courts, …)
+ *   super_admin → common + admin links + super_admin links
  *
  * Requirements: 23.1, 23.2, 23.3, 23.4
  */
 export default async function Navbar() {
   const supabase = await createClient();
 
-  // Run auth + site-name fetch in parallel
   const [{ data: { user } }, { data: settingRow }] = await Promise.all([
     supabase.auth.getUser(),
     supabase
@@ -74,9 +98,8 @@ export default async function Navbar() {
   ]);
 
   const role = ((user?.app_metadata?.role ?? user?.user_metadata?.role) ?? null) as UserRole;
-  const { roleLinks, showLogout } = resolveRoleLinks(role);
+  const { roleLinks, superAdminLinks, showLogout } = resolveRoleLinks(role);
 
-  // Display name: prefer full_name from user_metadata, fall back to email prefix
   const displayName: string | null = user
     ? ((user.user_metadata?.full_name as string | undefined) ??
        user.email?.split("@")[0] ??
@@ -89,6 +112,7 @@ export default async function Navbar() {
     <NavbarClient
       commonLinks={COMMON_LINKS}
       roleLinks={roleLinks}
+      superAdminLinks={superAdminLinks}
       showLogout={showLogout}
       siteName={siteName}
       displayName={displayName}

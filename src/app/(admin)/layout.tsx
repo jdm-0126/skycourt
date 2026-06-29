@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Box from "@mui/material/Box";
 import AdminSidebar from "@/components/layout/AdminSidebar";
+import Navbar from "@/components/layout/Navbar";
 
 export const metadata: Metadata = {
   title: {
@@ -13,11 +14,12 @@ export const metadata: Metadata = {
 /**
  * Admin route group layout.
  *
- * Wraps every page under (admin) with a two-column flex layout:
- *   - Left:  AdminSidebar (240 px, sticky)
- *   - Right: Main content area (flex-1)
+ * Structure:
+ *   - Top:   Navbar (fixed, full-width) — provides mobile burger + desktop links
+ *   - Below: Two-column flex row
+ *       Left:  AdminSidebar (240 px, sticky, desktop only)
+ *       Right: Main content area (flex-1)
  *
- * This is a React Server Component — no client-side interactivity here.
  * The (admin) route group is protected by middleware (Requirement 6.2).
  */
 export default function AdminLayout({
@@ -26,45 +28,45 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Box
-      sx={{
-        display: "flex",
-        minHeight: "100vh",
-        bgcolor: "background.default",
-      }}
-    >
-      {/* ------------------------------------------------------------------ */}
-      {/* Persistent sidebar — server component with role-aware links        */}
-      {/* ------------------------------------------------------------------ */}
-      <Box
-        component="aside"
-        sx={{
-          width: 240,
-          flexShrink: 0,
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          overflowY: "auto",
-          // Hide sidebar on very small screens (mobile)
-          display: { xs: "none", md: "block" },
-        }}
-      >
-        <AdminSidebar />
-      </Box>
+    <>
+      {/* Navbar renders its own fixed AppBar + Toolbar spacer */}
+      <Navbar />
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Main content                                                        */}
-      {/* ------------------------------------------------------------------ */}
       <Box
-        component="main"
         sx={{
-          flex: 1,
-          minWidth: 0,
-          overflowX: "hidden",
+          display: "flex",
+          minHeight: "calc(100vh - 64px)", // subtract AppBar height
+          bgcolor: "background.default",
         }}
       >
-        {children}
+        {/* Persistent sidebar — desktop only */}
+        <Box
+          component="aside"
+          sx={{
+            width: 240,
+            flexShrink: 0,
+            position: "sticky",
+            top: 64, // stick below the fixed AppBar
+            height: "calc(100vh - 64px)",
+            overflowY: "auto",
+            display: { xs: "none", md: "block" },
+          }}
+        >
+          <AdminSidebar />
+        </Box>
+
+        {/* Main content */}
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            overflowX: "hidden",
+          }}
+        >
+          {children}
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 }

@@ -89,6 +89,7 @@ function LoginForm() {
     // accounts created via the admin API or manually in the database).
     const session = authData.session;
 
+    let role: string | undefined;
     let destination = "/";
 
     if (session?.user?.id) {
@@ -98,7 +99,7 @@ function LoginForm() {
         .eq("id", session.user.id)
         .single();
 
-      const role = (userRow as { role?: string } | null)?.role;
+      role = (userRow as { role?: string } | null)?.role;
 
       if (role) {
         destination = dashboardForRole({ role }, {});
@@ -115,7 +116,20 @@ function LoginForm() {
     if (destination === "/") {
       const appMeta = (session?.user?.app_metadata ?? {}) as Record<string, unknown>;
       const userMeta = (session?.user?.user_metadata ?? {}) as Record<string, unknown>;
+      role = (appMeta?.role ?? userMeta?.role) as string | undefined;
       destination = dashboardForRole(appMeta, userMeta);
+    }
+
+    // Honour the ?redirect= param only for members going to a /member/* path.
+    // Admins and super_admins always land on their own dashboard — never on
+    // a member booking page that could silently skip admin-level checks.
+    const redirectParam = searchParams.get("redirect");
+    if (
+      role === "member" &&
+      redirectParam &&
+      redirectParam.startsWith("/member/")
+    ) {
+      destination = redirectParam;
     }
 
     router.push(destination);
